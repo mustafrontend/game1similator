@@ -109,7 +109,7 @@ export const LifeSocialPanel: React.FC = () => {
       ...chatMessages,
       {
         id: Date.now().toString(),
-        sender: user?.username || 'MustafaÖztürk',
+        sender: user?.username || 'Apple Oyuncusu',
         text: chatInput,
         time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
       }

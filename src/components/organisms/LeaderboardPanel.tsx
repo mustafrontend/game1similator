@@ -78,7 +78,7 @@ export const LeaderboardPanel: React.FC = () => {
     {
       rank: 4,
       id: 'p-you',
-      username: user?.username || 'MustafaÖztürk',
+      username: user?.username || 'Apple Oyuncusu',
       title: user?.title || 'Finans Krallığı Şampiyonu',
       level: 14,
       net_worth: (wallet?.total_liquid || 199500) + 8900000,

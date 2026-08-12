@@ -54,7 +54,7 @@ export const App: React.FC = () => {
             activeToken = loginRes.token;
             setToken(loginRes.token);
           } catch (loginErr) {
-            const regRes = await ApiService.register('test@virtual.life', 'MustafaÖztürk', 'Password123!');
+            const regRes = await ApiService.register('test@virtual.life', 'Apple Oyuncusu', 'Password123!');
             activeToken = regRes.token;
             setToken(regRes.token);
           }

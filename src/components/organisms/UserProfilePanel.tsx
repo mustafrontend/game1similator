@@ -42,7 +42,7 @@ export const UserProfilePanel: React.FC = () => {
       if (user) {
         setUser({
           ...user,
-          username: user.username && user.username !== 'MustafaÖztürk' ? user.username : appleName,
+          username: user.username || appleName,
           email: user.email || 'apple.user@icloud.com'
         });
       }

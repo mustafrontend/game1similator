@@ -130,7 +130,7 @@ export const FinancialDashboard: React.FC = () => {
 
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black text-white tracking-tight">{user?.username || 'MustafaÖztürk'}</h2>
+                <h2 className="text-2xl font-black text-white tracking-tight">{user?.username || 'Apple Oyuncusu'}</h2>
                 <Badge variant="gold">{user?.title || t('citizen')}</Badge>
                 {isVitalCritical && <Badge variant="rose" className="animate-pulse">{t('debuff_active_badge')}</Badge>}
               </div>
