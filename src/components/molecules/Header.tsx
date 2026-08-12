@@ -5,7 +5,7 @@ import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { MarketApiService, LiveExchangeRates, LiveCryptoRate } from '../../services/marketApi';
 import { LANGUAGES } from '../../i18n/translations';
-import { Heart, Smile, Zap, User as UserIcon, LogIn, TrendingUp, DollarSign, RefreshCw, Crown, LogOut, Wallet as WalletIcon, AlertTriangle, Globe } from 'lucide-react';
+import { Heart, Smile, Zap, User as UserIcon, LogIn, DollarSign, RefreshCw, LogOut, Wallet as WalletIcon, AlertTriangle } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { user, wallet, offshoreBalance, setActiveTab, setIsAuthModalOpen, logout, language, setIsLanguageModalOpen, t, formatCurrency } = useStore();
@@ -17,6 +17,10 @@ export const Header: React.FC = () => {
 
   const totalLiquidMoney = (wallet?.cash_balance ?? 5000) + (wallet?.bank_balance ?? 15000) + (offshoreBalance ?? 0);
   const isNegative = totalLiquidMoney < 0;
+  
+  // Detect if any critical error or warning is active
+  const isVitalCritical = user ? (user.health <= 25 || user.happiness <= 20 || user.energy <= 15) : false;
+  const hasError = isNegative || isVitalCritical;
 
   const fetchLiveMarketData = async () => {
     setLoadingRates(true);
@@ -35,7 +39,6 @@ export const Header: React.FC = () => {
 
   const renderTickerContent = () => (
     <div className="flex items-center gap-6 whitespace-nowrap px-4">
-      {/* DOLAR */}
       <span className="inline-flex items-center gap-1.5 font-bold text-amber-400 whitespace-nowrap">
         <DollarSign className="w-3.5 h-3.5 text-amber-400 shrink-0" />
         <span>{t('dolar')}:</span>
@@ -46,7 +49,6 @@ export const Header: React.FC = () => {
       </span>
       <span className="text-slate-700 font-bold">•</span>
 
-      {/* EURO */}
       <span className="inline-flex items-center gap-1.5 font-bold text-sky-400 whitespace-nowrap">
         <span>{t('euro')}:</span>
         <strong className="text-white">₺{exchangeRates.eur_try}</strong>
@@ -56,7 +58,6 @@ export const Header: React.FC = () => {
       </span>
       <span className="text-slate-700 font-bold">•</span>
 
-      {/* CRYPTOS */}
       {cryptoRates.map((c) => (
         <React.Fragment key={c.symbol}>
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -73,9 +74,9 @@ export const Header: React.FC = () => {
   );
 
   return (
-    <header className="bg-slate-950 border-b border-slate-800 text-white sticky top-0 z-50 shadow-2xl pt-[max(16px,env(safe-area-inset-top))] sm:pt-0">
+    <header className="bg-slate-950 border-b border-slate-800 text-white sticky top-0 z-50 shadow-2xl pt-[max(12px,env(safe-area-inset-top))] sm:pt-0">
       {/* CONTINUOUS INFINITE SCROLLING WALL STREET STOCK MARQUEE HEADER */}
-      <div className="bg-black/95 border-b border-slate-900 py-1.5 flex justify-between items-center text-[11px] font-mono text-slate-300 overflow-hidden relative">
+      <div className="bg-black/95 border-b border-slate-900 py-1 flex justify-between items-center text-[10px] font-mono text-slate-300 overflow-hidden relative">
         <div className="flex-1 overflow-hidden relative">
           <div className="animate-ticker">
             {renderTickerContent()}
@@ -86,15 +87,117 @@ export const Header: React.FC = () => {
 
         <button
           onClick={fetchLiveMarketData}
-          className="text-slate-400 hover:text-sky-400 transition-all px-3 py-1 bg-slate-950/90 border-l border-slate-800 shrink-0 flex items-center gap-1 text-[10px] font-bold z-10 shadow-lg"
+          className="text-slate-400 hover:text-sky-400 transition-all px-2.5 py-0.5 bg-slate-950/90 border-l border-slate-800 shrink-0 flex items-center gap-1 text-[9px] font-bold z-10 shadow-lg cursor-pointer"
           title="Piyasaları Anlık Güncelle"
         >
-          <RefreshCw className={`w-3 h-3 ${loadingRates ? 'animate-spin' : ''}`} /> {exchangeRates.last_updated}
+          <RefreshCw className={`w-2.5 h-2.5 ${loadingRates ? 'animate-spin' : ''}`} /> {exchangeRates.last_updated}
         </button>
       </div>
 
-      {/* Main Header Row */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE COMPACT HEADER (ULTRA SLEEK SINGLE ROW OR 2 ROWS ON ERROR) */}
+      {/* ------------------------------------------------------------- */}
+      <div className="block md:hidden max-w-7xl mx-auto px-3 py-2">
+        {/* ROW 1: Logo on Left, Info & Balance on Right */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Logo + Title */}
+          <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => setActiveTab('dashboard')}>
+            <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-xl object-cover border border-amber-400 shadow-md" />
+            <span className="font-black text-sm text-white tracking-tight">VIRTUAL LIFE</span>
+          </div>
+
+          {/* Right Controls (Language, Money, Profile) */}
+          <div className="flex items-center gap-1.5">
+            {/* Language Flag Button */}
+            <button
+              onClick={() => setIsLanguageModalOpen(true)}
+              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-black text-slate-200 cursor-pointer flex items-center gap-1"
+            >
+              <span>{currentLanguageObj.flag}</span>
+              <span className="text-[10px] uppercase">{currentLanguageObj.code}</span>
+            </button>
+
+            {/* Money & Profile Button */}
+            {user ? (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-xs font-black transition-all cursor-pointer ${
+                    isNegative ? 'bg-rose-500/20 border-rose-500/60 text-rose-400' : 'bg-amber-500/20 border-amber-400/50 text-amber-300'
+                  }`}
+                >
+                  <WalletIcon className="w-3.5 h-3.5" />
+                  <span>{formatCurrency(totalLiquidMoney)}</span>
+                </button>
+                <button
+                  onClick={logout}
+                  className="p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
+                  title="Çıkış Yap"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                variant="gold"
+                size="sm"
+                className="py-1 px-2.5 text-xs font-black"
+                onClick={() => {
+                  const state = useStore.getState();
+                  state.setUser({
+                    id: 'apple-revcat-user-1001',
+                    email: 'apple.user@icloud.com',
+                    username: 'Apple Oyuncusu',
+                    health: 100.0,
+                    happiness: 100.0,
+                    energy: 100.0,
+                    credit_score: 1420,
+                    reputation: 680,
+                    education_level: 'BACHELOR',
+                    title: 'Finans Krallığı Şampiyonu',
+                    status: 'ONLINE',
+                  });
+                  state.setWallet({
+                    id: 'wallet-1001',
+                    user_id: 'apple-revcat-user-1001',
+                    cash_balance: 14500.0,
+                    bank_balance: 185000.0,
+                    total_liquid: 199500.0,
+                    is_joint: false,
+                  });
+                  state.setToken('demo-jwt-token-123456');
+                  state.setIsAuthModalOpen(false);
+                }}
+              >
+                 Giriş
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* ROW 2: CONDITIONAL WARNING / ERROR BAR (APPEARS ONLY IF ERROR IS ACTIVE) */}
+        {hasError && (
+          <div className="mt-1.5 p-2 bg-rose-500/15 border border-rose-500/40 rounded-xl flex items-center justify-between text-xs text-rose-300 font-bold animate-pulse">
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 animate-bounce" />
+              <span>
+                {isNegative ? `Eksi Bakiyedesiniz: ${formatCurrency(totalLiquidMoney)}` : 'Kritik Gösterge Uyarısı!'}
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveTab(isNegative ? 'underground' : 'store')}
+              className="px-2 py-0.5 bg-rose-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider"
+            >
+              Çözüm Al
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* DESKTOP FULL HEADER (EXPANDED LAYOUT FOR MD & LG SCREENS) */}
+      {/* ------------------------------------------------------------- */}
+      <div className="hidden md:flex max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex-row justify-between items-center gap-4">
         {/* Logo and App Brand Title */}
         <div className="flex items-center gap-3">
           <div className="relative cursor-pointer" onClick={() => setActiveTab('dashboard')}>
@@ -119,7 +222,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Player Vitals Progress Bars */}
-        <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-4">
           <StatusBar
             label={t('health')}
             value={user?.health ?? 100.0}
@@ -140,9 +243,8 @@ export const Header: React.FC = () => {
           />
         </div>
 
-        {/* User Account / Total Liquid Money Badge with Prominent Profilim & Language Selector Button */}
+        {/* User Account & Controls */}
         <div className="flex items-center gap-3">
-          {/* GLOBAL 12-LANGUAGE SELECTOR BUTTON */}
           <button
             onClick={() => setIsLanguageModalOpen(true)}
             title="Change Language / Dil Değiştir"
@@ -179,7 +281,6 @@ export const Header: React.FC = () => {
                 </div>
               </div>
 
-              {/* PROMINENT PROFILIM BUTTON */}
               <button
                 onClick={() => setActiveTab('profile')}
                 title="Profil Sayfasına Git"
@@ -189,11 +290,10 @@ export const Header: React.FC = () => {
                 <span>{t('my_profile')}</span>
               </button>
 
-              {/* LOGOUT BUTTON */}
               <button
                 onClick={logout}
                 title="Çıkış Yap"
-                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-rose-600/30 hover:border-rose-500 border border-slate-700 flex items-center justify-center font-black text-slate-300 hover:text-rose-400 text-sm shadow-md transition-all"
+                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-rose-600/30 hover:border-rose-500 border border-slate-700 flex items-center justify-center font-black text-slate-300 hover:text-rose-400 text-sm shadow-md transition-all cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -227,11 +327,6 @@ export const Header: React.FC = () => {
                 });
                 state.setToken('demo-jwt-token-123456');
                 state.setIsAuthModalOpen(false);
-                state.addToast({
-                  type: 'success',
-                  title: ' Apple ID Girişi Başarılı',
-                  message: 'Apple Oyuncusu hesabı ile anında giriş yapıldı!'
-                });
               }}
             >
               <LogIn className="w-4 h-4 mr-1.5" />  {t('login_signup')}
