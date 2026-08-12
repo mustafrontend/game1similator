@@ -1,28 +1,24 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../store/useStore';
-import { ApiService } from '../../services/api';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
-import { X, Lock, Mail, User as UserIcon, Sparkles, LogIn, CheckCircle2, Zap, ShieldCheck } from 'lucide-react';
+import { X, Lock, Mail, User as UserIcon, LogIn, CheckCircle2 } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, setIsAuthModalOpen, setUser, setWallet, setToken } = useStore();
+  const { isAuthModalOpen, setIsAuthModalOpen, setUser, setWallet, setToken, addToast } = useStore();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('apple.user@icloud.com');
   const [username, setUsername] = useState('Apple Oyuncusu');
   const [password, setPassword] = useState('123456');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
 
   if (!isAuthModalOpen) return null;
 
-  const performLoginWithProfile = (emailVal: string, usernameVal: string) => {
-    const finalName = usernameVal || 'Apple Oyuncusu';
+  const executeInstantLogin = (nameToUse: string) => {
+    const finalName = nameToUse.trim() || 'Apple Oyuncusu';
     setUser({
-      id: 'demo-user-1',
-      email: emailVal,
+      id: 'apple-revcat-user-1001',
+      email: email || 'apple.user@icloud.com',
       username: finalName,
       health: 100.0,
       happiness: 100.0,
@@ -34,58 +30,26 @@ export const AuthModal: React.FC = () => {
       status: 'ONLINE',
     });
     setWallet({
-      id: 'wallet-1',
-      user_id: 'demo-user-1',
+      id: 'wallet-1001',
+      user_id: 'apple-revcat-user-1001',
       cash_balance: 14500.0,
       bank_balance: 185000.0,
       total_liquid: 199500.0,
       is_joint: false,
     });
     setToken('demo-jwt-token-123456');
-    setLoginSuccess(`Hoş geldiniz ${finalName}! Apple hesabınız ile giriş yapıldı.`);
-    setTimeout(() => {
-      setLoginSuccess(null);
-      setIsAuthModalOpen(false);
-    }, 800);
+    setIsAuthModalOpen(false);
+
+    addToast({
+      type: 'success',
+      title: ' Apple ID Girişi Başarılı 🟢',
+      message: `${finalName} hesabı ile anında giriş yapıldı.`
+    });
   };
 
-  const handleAppleSignIn = () => {
-    setLoading(true);
-    setTimeout(() => {
-      performLoginWithProfile('apple.user@icloud.com', 'Apple Oyuncusu');
-      setLoading(false);
-    }, 300);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      if (isRegister) {
-        const res = await ApiService.register(email, username, password).catch(() => null);
-        if (res) {
-          setUser(res.user);
-          setToken(res.token);
-        } else {
-          performLoginWithProfile(email, username);
-        }
-      } else {
-        const res = await ApiService.login(email, password).catch(() => null);
-        if (res) {
-          setUser(res.user);
-          setToken(res.token);
-        } else {
-          performLoginWithProfile(email, username);
-        }
-      }
-      setIsAuthModalOpen(false);
-    } catch (err: any) {
-      performLoginWithProfile(email, username);
-    } finally {
-      setLoading(false);
-    }
+    executeInstantLogin(username);
   };
 
   return (
@@ -99,7 +63,7 @@ export const AuthModal: React.FC = () => {
         >
           <button
             onClick={() => setIsAuthModalOpen(false)}
-            className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 transition-all"
+            className="absolute top-5 right-5 text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -125,26 +89,12 @@ export const AuthModal: React.FC = () => {
             </p>
           </div>
 
-          {loginSuccess && (
-            <div className="mb-4 p-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-2 animate-bounce">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>{loginSuccess}</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-4 p-3 bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-bold rounded-xl">
-              {error}
-            </div>
-          )}
-
-          {/* PROMINENT APPLE SIGN IN BUTTON (INSTANT 1-CLICK LOGIN) */}
+          {/* PROMINENT INSTANT APPLE SIGN IN BUTTON */}
           <div className="mb-5 p-3.5 bg-slate-950 border border-slate-700 rounded-2xl text-left space-y-2">
             <Button
               variant="secondary"
-              className="w-full py-3 text-xs font-black bg-white text-slate-950 hover:bg-slate-100 flex items-center justify-center gap-2"
-              onClick={handleAppleSignIn}
-              disabled={loading}
+              className="w-full py-3.5 text-xs font-black bg-white text-slate-950 hover:bg-slate-100 flex items-center justify-center gap-2 cursor-pointer"
+              onClick={() => executeInstantLogin('Apple Oyuncusu')}
             >
               <span className="text-base leading-none"></span> Apple ID ile Tek Tıkla Giriş Yap
             </Button>
@@ -163,7 +113,7 @@ export const AuthModal: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-hidden focus:border-amber-400"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
                   placeholder="apple.user@icloud.com"
                 />
               </div>
@@ -179,7 +129,7 @@ export const AuthModal: React.FC = () => {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-hidden focus:border-amber-400"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
                     placeholder="Apple Oyuncusu"
                   />
                 </div>
@@ -195,7 +145,7 @@ export const AuthModal: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-hidden focus:border-amber-400"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
                   placeholder="••••••••"
                 />
               </div>
@@ -204,17 +154,12 @@ export const AuthModal: React.FC = () => {
             <Button
               variant="gold"
               type="submit"
-              disabled={loading}
-              className="w-full py-3.5 text-xs font-black shadow-lg shadow-amber-500/20"
+              className="w-full py-3.5 text-xs font-black shadow-lg shadow-amber-500/20 cursor-pointer"
             >
-              {loading ? (
-                'Giriş Yapılıyor...'
-              ) : (
-                <span className="flex items-center justify-center gap-1.5">
-                  <LogIn className="w-4 h-4 text-slate-950" />
-                  {isRegister ? 'Kayıt Ol & Oyna' : 'Giriş Yap & Oyna'}
-                </span>
-              )}
+              <span className="flex items-center justify-center gap-1.5">
+                <LogIn className="w-4 h-4 text-slate-950" />
+                {isRegister ? 'Kayıt Ol & Oyna' : 'Giriş Yap & Oyna'}
+              </span>
             </Button>
           </form>
 
@@ -225,7 +170,7 @@ export const AuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsRegister(false)}
-                  className="text-amber-400 font-bold hover:underline"
+                  className="text-amber-400 font-bold hover:underline cursor-pointer"
                 >
                   Giriş Yap
                 </button>
@@ -236,7 +181,7 @@ export const AuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsRegister(true)}
-                  className="text-amber-400 font-bold hover:underline"
+                  className="text-amber-400 font-bold hover:underline cursor-pointer"
                 >
                   Kayıt Ol
                 </button>
