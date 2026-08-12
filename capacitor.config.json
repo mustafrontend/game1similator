@@ -1,0 +1,19 @@
+{
+  "appId": "com.virtuallife.simulator",
+  "appName": "Virtual Life",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#070a12",
+      "androidSplashResourceName": "splash",
+      "iosSpinnerStyle": "small",
+      "spinnerColor": "#f59e0b"
+    }
+  }
+}

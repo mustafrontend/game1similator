@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/jpeg" href="/logo.jpg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Virtual Life & Economy Simulation</title>
+    <style>
+      @keyframes tickerMarquee {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-ticker {
+        display: flex;
+        align-items: center;
+        width: max-content;
+        animation: tickerMarquee 30s linear infinite;
+      }
+      .animate-ticker:hover {
+        animation-play-state: paused;
+      }
+    </style>
+  </head>
+  <body className="bg-[#070a12] text-slate-100">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
