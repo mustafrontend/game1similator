@@ -24,13 +24,14 @@ export class AIService {
 
     return {
       id: 'offer-bot-' + Date.now(),
-      targetId: asset.id,
-      targetTitle: isVehicle ? (asset as Vehicle).brand_model : (asset as Property).title,
-      offererId: 'bot-' + Math.random().toString(36).substring(2, 7),
-      offererUsername: `🤖 ${randomBot}`,
-      offerAmount,
+      asset_type: isVehicle ? 'VEHICLE' : 'PROPERTY',
+      asset_id: asset.id,
+      asset_title: isVehicle ? (asset as Vehicle).brand_model : (asset as Property).title,
+      offer_amount: offerAmount,
+      buyer_name: `🤖 ${randomBot}`,
+      is_online_player: false,
       status: 'PENDING',
-      timestamp: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      created_at: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
     };
   }
 
