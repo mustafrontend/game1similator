@@ -1,65 +1,91 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../store/useStore';
+import { ApiService } from '../../services/api';
 import { Button } from '../atoms/Button';
-import { Badge } from '../atoms/Badge';
-import { X, Lock, Mail, User as UserIcon, LogIn, CheckCircle2, Globe, Sparkles } from 'lucide-react';
+import { X, Lock, Mail, User as UserIcon, Sparkles, Loader2 } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setIsAuthModalOpen, setUser, setWallet, setToken, addToast } = useStore();
   const [isRegister, setIsRegister] = useState(true);
-  const [email, setEmail] = useState('oyuncu@gmail.com');
-  const [username, setUsername] = useState('Oyuncu Unvanı');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   if (!isAuthModalOpen) return null;
 
-  const executeAuth = (emailVal: string, nameToUse: string, provider: 'APPLE' | 'GOOGLE' | 'GMAIL') => {
-    const finalName = nameToUse.trim() || (provider === 'APPLE' ? 'Apple Oyuncusu' : provider === 'GOOGLE' ? 'Google Oyuncusu' : 'Gmail Oyuncusu');
-    const finalEmail = emailVal.trim() || `${finalName.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
+  const handleSocialSignIn = async (provider: 'APPLE' | 'GOOGLE') => {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await ApiService.socialAuth(provider);
+      setUser(res.user);
+      setWallet(res.wallet);
+      setToken(res.token);
+      setIsAuthModalOpen(false);
 
-    setUser({
-      id: `user-${provider.toLowerCase()}-1001`,
-      email: finalEmail,
-      username: finalName,
-      health: 100.0,
-      happiness: 100.0,
-      energy: 100.0,
-      credit_score: 1420,
-      reputation: 680,
-      education_level: 'BACHELOR',
-      title: 'Finans Krallığı Şampiyonu',
-      status: 'ONLINE',
-    });
-
-    setWallet({
-      id: `wallet-${provider.toLowerCase()}-1001`,
-      user_id: `user-${provider.toLowerCase()}-1001`,
-      cash_balance: 14500.0,
-      bank_balance: 185000.0,
-      total_liquid: 199500.0,
-      is_joint: false,
-    });
-
-    setToken(`demo-jwt-token-${provider.toLowerCase()}-123456`);
-    setIsAuthModalOpen(false);
-
-    const providerTitles = {
-      APPLE: ' Apple ID Girişi',
-      GOOGLE: '🌐 Google Account Girişi',
-      GMAIL: '✉️ Gmail Hesabı'
-    };
-
-    addToast({
-      type: 'success',
-      title: `${providerTitles[provider]} Başarılı 🟢`,
-      message: `Hoş geldiniz ${finalName}! Oturumunuz anında açıldı.`
-    });
+      const titleMap = { APPLE: ' Apple ID Girişi', GOOGLE: '🌐 Google Account Girişi' };
+      addToast({
+        type: 'success',
+        title: `${titleMap[provider]} Başarılı 🟢`,
+        message: `Hoş geldiniz ${res.user.username}! Oturumunuz açıldı.`
+      });
+    } catch (err: any) {
+      setError(err.message || 'Giriş yapılamadı.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    executeAuth(email, username, 'GMAIL');
+    setError(null);
+
+    if (!email || !password) {
+      setError('Lütfen e-posta ve şifre alanlarını doldurun.');
+      return;
+    }
+
+    if (isRegister && !username) {
+      setError('Lütfen oyuncu unvanınızı girin.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (isRegister) {
+        const res = await ApiService.register(email, username, password);
+        setUser(res.user);
+        setWallet(res.wallet);
+        setToken(res.token);
+        setIsAuthModalOpen(false);
+
+        addToast({
+          type: 'success',
+          title: 'Hesap Başarıyla Oluşturuldu 🟢',
+          message: `Hoş geldiniz ${res.user.username}! Gerçek hesabınız açıldı.`
+        });
+      } else {
+        const res = await ApiService.login(email, password);
+        setUser(res.user);
+        setWallet(res.wallet);
+        setToken(res.token);
+        setIsAuthModalOpen(false);
+
+        addToast({
+          type: 'success',
+          title: 'Giriş Başarılı 🟢',
+          message: `Hoş geldiniz ${res.user.username}! Hesabınıza giriş yapıldı.`
+        });
+      }
+    } catch (err: any) {
+      setError(err.message || 'İşlem başarısız oldu. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -92,31 +118,37 @@ export const AuthModal: React.FC = () => {
               </span>
             </div>
             <h2 className="text-2xl font-black tracking-tight text-white">
-              {isRegister ? 'Yeni Oyuncu Kaydı' : 'Simülasyon Girişi'}
+              {isRegister ? 'Gerçek Oyuncu Kaydı' : 'Gerçek Hesap Girişi'}
             </h2>
             <p className="text-xs font-semibold text-slate-400 mt-1">
-              Google, Apple ID veya Gmail hesabınızla tek tıkla başlayın.
+              Google, Apple ID veya e-posta hesabınızla gerçek oturum açın.
             </p>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-rose-500/20 border border-rose-500/50 text-rose-300 text-xs font-bold rounded-xl text-left animate-shake">
+              ⚠️ {error}
+            </div>
+          )}
+
           {/* 1-CLICK SOCIAL SIGN IN BUTTONS (APPLE & GOOGLE) */}
           <div className="space-y-2.5 mb-5 text-left">
-            {/* APPLE SIGN IN BUTTON */}
             <Button
               variant="secondary"
+              disabled={loading}
               className="w-full py-3 text-xs font-black bg-white text-slate-950 hover:bg-slate-100 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-              onClick={() => executeAuth('apple.user@icloud.com', 'Apple Oyuncusu', 'APPLE')}
+              onClick={() => handleSocialSignIn('APPLE')}
             >
-              <span className="text-base leading-none"></span> Apple ID ile Tek Tıkla Giriş Yap
+              <span className="text-base leading-none"></span> Apple ID ile Giriş Yap
             </Button>
 
-            {/* GOOGLE SIGN IN BUTTON */}
             <Button
               variant="outline"
+              disabled={loading}
               className="w-full py-3 text-xs font-black bg-slate-950 border border-slate-700 text-white hover:bg-slate-800 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-              onClick={() => executeAuth('google.user@gmail.com', 'Google Oyuncusu', 'GOOGLE')}
+              onClick={() => handleSocialSignIn('GOOGLE')}
             >
-              <span className="text-base font-black text-rose-400">G</span> Google / Gmail ile Tek Tıkla Giriş Yap
+              <span className="text-base font-black text-rose-400">G</span> Google / Gmail ile Giriş Yap
             </Button>
           </div>
 
@@ -124,15 +156,15 @@ export const AuthModal: React.FC = () => {
           <div className="relative flex py-2 items-center mb-4">
             <div className="flex-grow border-t border-slate-800"></div>
             <span className="flex-shrink mx-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-              VEYA GMAİL İLE KAYDOL & GİRİŞ YAP
+              VEYA E-POSTA İLE HESAP OLUŞTUR / GİRİŞ YAP
             </span>
             <div className="flex-grow border-t border-slate-800"></div>
           </div>
 
-          {/* GMAIL & PASSWORD FORM */}
+          {/* REAL GMAIL & PASSWORD FORM */}
           <form onSubmit={handleFormSubmit} className="space-y-3.5 text-left">
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Gmail Adresiniz</label>
+              <label className="text-xs font-bold text-slate-300 block mb-1">E-posta Adresiniz</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
@@ -141,7 +173,7 @@ export const AuthModal: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
-                  placeholder="oyuncu@gmail.com"
+                  placeholder="ornek@gmail.com"
                 />
               </div>
             </div>
@@ -157,7 +189,7 @@ export const AuthModal: React.FC = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
-                    placeholder="Oyuncu Unvanı"
+                    placeholder="Örn: Mustafa Yılmaz"
                   />
                 </div>
               </div>
@@ -181,12 +213,19 @@ export const AuthModal: React.FC = () => {
             <Button
               variant="gold"
               type="submit"
+              disabled={loading}
               className="w-full py-3 text-xs font-black shadow-lg shadow-amber-500/20 cursor-pointer mt-1"
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-slate-950" />
-                {isRegister ? 'Gmail & Şifre ile Kaydol' : 'Gmail & Şifre ile Giriş Yap'}
-              </span>
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> İşlem Yapılıyor...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-slate-950" />
+                  {isRegister ? 'Gerçek Hesap Oluştur & Kaydol' : 'Hesabıma Giriş Yap'}
+                </span>
+              )}
             </Button>
           </form>
 
@@ -197,7 +236,7 @@ export const AuthModal: React.FC = () => {
                 Zaten hesabınız var mı?{' '}
                 <button
                   type="button"
-                  onClick={() => setIsRegister(false)}
+                  onClick={() => { setIsRegister(false); setError(null); }}
                   className="text-amber-400 font-bold hover:underline cursor-pointer"
                 >
                   Giriş Yap
@@ -208,10 +247,10 @@ export const AuthModal: React.FC = () => {
                 Hesabınız yok mu?{' '}
                 <button
                   type="button"
-                  onClick={() => setIsRegister(true)}
+                  onClick={() => { setIsRegister(true); setError(null); }}
                   className="text-amber-400 font-bold hover:underline cursor-pointer"
                 >
-                  Gmail ile Kaydol
+                  Hesap Oluştur / Kaydol
                 </button>
               </p>
             )}
