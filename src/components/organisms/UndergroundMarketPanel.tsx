@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
-import { useStore } from '../../store/useStore';
+import React, { useState, useEffect } from 'react';
+import { useStore, UNDERGROUND_AUCTION_ITEM_TITLE, freshUndergroundAuction } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { ShieldAlert, Landmark, Sparkles, Gem, ArrowUpRight, ArrowDownLeft, Eye, Lock, Zap, Clock, ShieldCheck, CheckCircle2, DollarSign } from 'lucide-react';
 
 export const UndergroundMarketPanel: React.FC = () => {
-  const { wallet, setWallet, offshoreBalance, setOffshoreBalance, vehicles, setVehicles, addToast, t } = useStore();
+  const { wallet, setWallet, offshoreBalance, setOffshoreBalance, addToast, t, undergroundAuction, setUndergroundAuction } = useStore();
   const [activeSubTab, setActiveSubTab] = useState<'OFFSHORE' | 'AUCTION' | 'TIPS'>('OFFSHORE');
   const [depositAmount, setDepositAmount] = useState('5000000');
-  const [auctionBid, setAuctionBid] = useState(1250000);
+  const [now, setNow] = useState(Date.now());
   const [unlockedTips, setUnlockedTips] = useState<string[]>([]);
+
+  // Live countdown clock — resolution itself is handled globally in App.tsx's tick loop,
+  // so the auction still resolves even if the user has navigated away from this tab.
+  useEffect(() => {
+    const clock = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(clock);
+  }, []);
+
+  const timeLeftMs = Math.max(0, undergroundAuction.endsAt - now);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
@@ -79,7 +88,9 @@ export const UndergroundMarketPanel: React.FC = () => {
 
   // 3. MIDNIGHT VIP AUCTION BID
   const handlePlaceBid = () => {
-    const nextBid = auctionBid + 250000;
+    if (undergroundAuction.resolved || timeLeftMs <= 0) return;
+
+    const nextBid = undergroundAuction.currentBid + 250000;
     if (!wallet || wallet.total_liquid < nextBid) {
       addToast({
         type: 'error',
@@ -89,13 +100,39 @@ export const UndergroundMarketPanel: React.FC = () => {
       return;
     }
 
-    setAuctionBid(nextBid);
+    setUndergroundAuction({ ...undergroundAuction, currentBid: nextBid, leader: 'PLAYER' });
 
     addToast({
       type: 'warning',
       title: 'Müzayede Teklifi Verildi 🔥',
-      message: `1962 Ferrari 250 GTO Classic için en yüksek teklif sizde: ${formatCurrency(nextBid)}`
+      message: `${UNDERGROUND_AUCTION_ITEM_TITLE} için en yüksek teklif sizde: ${formatCurrency(nextBid)}`
     });
+
+    // Rival bidder has a chance to counter-bid before the auction closes
+    if (Math.random() < 0.45) {
+      setTimeout(() => {
+        const current = useStore.getState().undergroundAuction;
+        if (current.resolved || current.leader !== 'PLAYER' || current.endsAt <= Date.now()) return;
+        const counterBid = current.currentBid + 250000;
+        useStore.getState().setUndergroundAuction({ ...current, currentBid: counterBid, leader: 'AI' });
+        addToast({
+          type: 'warning',
+          title: '🤖 Rakip Teklif Verdi',
+          message: `Gizemli bir müzayedeci ${formatCurrency(counterBid)} teklif etti. Liderliği geri almak için tekrar teklif verin!`
+        });
+      }, 2500);
+    }
+  };
+
+  const handleStartNewAuction = () => {
+    setUndergroundAuction(freshUndergroundAuction());
+  };
+
+  const formatCountdown = (ms: number) => {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // 4. BUY INSIDER TIP
@@ -233,15 +270,41 @@ export const UndergroundMarketPanel: React.FC = () => {
         </Card>
       )}
 
-      {/* SUB-TAB 2 & 3 PLACEHOLDERS */}
+      {/* SUB-TAB 2: LIVE AUCTION */}
       {activeSubTab === 'AUCTION' && (
         <Card className="border-slate-800 bg-slate-950 p-6 space-y-4 text-center">
           <Gem className="w-12 h-12 text-amber-400 mx-auto animate-pulse" />
           <h3 className="text-lg font-black text-white">VIP Gece Müzayedesi</h3>
-          <p className="text-xs text-slate-400">1962 Ferrari 250 GTO Classic Açık Artırması Aktif</p>
-          <Button variant="gold" className="mx-auto" onClick={handlePlaceBid}>
-            Teklifi Artır: {formatCurrency(auctionBid + 250000)}
-          </Button>
+          <p className="text-xs text-slate-400">{UNDERGROUND_AUCTION_ITEM_TITLE} Açık Artırması</p>
+
+          <div className="p-4 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-2">
+            <div className="flex justify-between items-center text-xs font-bold text-slate-400">
+              <span>Güncel En Yüksek Teklif</span>
+              <span className="text-amber-400 text-base font-black">{formatCurrency(undergroundAuction.currentBid)}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-bold text-slate-400">
+              <span>Lider</span>
+              <Badge variant={undergroundAuction.leader === 'PLAYER' ? 'emerald' : undergroundAuction.leader === 'AI' ? 'rose' : 'slate'}>
+                {undergroundAuction.leader === 'PLAYER' ? '🟢 Siz Öndesiniz' : undergroundAuction.leader === 'AI' ? '🤖 Rakip Önde' : 'Henüz Teklif Yok'}
+              </Badge>
+            </div>
+            <div className="flex justify-between items-center text-xs font-bold text-slate-400">
+              <Clock className="w-3.5 h-3.5" />
+              <span className={timeLeftMs <= 15000 && !undergroundAuction.resolved ? 'text-rose-400 animate-pulse' : 'text-sky-300'}>
+                {undergroundAuction.resolved ? 'Müzayede Kapandı' : formatCountdown(timeLeftMs)}
+              </span>
+            </div>
+          </div>
+
+          {undergroundAuction.resolved ? (
+            <Button variant="gold" className="mx-auto" onClick={handleStartNewAuction}>
+              🔄 Yeni Müzayede Başlat
+            </Button>
+          ) : (
+            <Button variant="gold" className="mx-auto" onClick={handlePlaceBid}>
+              Teklifi Artır: {formatCurrency(undergroundAuction.currentBid + 250000)}
+            </Button>
+          )}
         </Card>
       )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../../store/useStore';
+import { useStore, DEFAULT_INVESTMENT_ASSETS } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -8,18 +8,30 @@ import { TrendingUp, TrendingDown, DollarSign, PieChart, ShoppingCart, Sparkles,
 
 export const InvestmentPanel: React.FC = () => {
   const { assets, setAssets, portfolio, wallet, setWallet, setPortfolio, addToast, t } = useStore();
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(assets[0] || null);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(assets[0] || DEFAULT_INVESTMENT_ASSETS[0]);
   const [buyAmount, setBuyAmount] = useState('5000');
   const [sellQuantityInput, setSellQuantityInput] = useState<{ [assetId: string]: string }>({});
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
 
+  // Auto-populate assets if empty & sync selected asset
+  useEffect(() => {
+    if (assets.length === 0) {
+      setAssets(DEFAULT_INVESTMENT_ASSETS);
+      setSelectedAsset(DEFAULT_INVESTMENT_ASSETS[0]);
+    } else if (!selectedAsset) {
+      setSelectedAsset(assets[0]);
+    }
+  }, [assets]);
+
   // Filter out any zero or sold portfolio entries
   const activePortfolio = portfolio.filter(p => p.quantity > 0.00001);
 
   // Hourly / Periodic Live Market Price Fluctuations
   useEffect(() => {
+    if (assets.length === 0) return;
+
     const interval = setInterval(() => {
       const updated = assets.map((a) => {
         const deltaPercent = (Math.random() * 4 - 2); // -2% to +2%

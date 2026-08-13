@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../store/useStore';
-import { Vehicle } from '../../types';
+import { Vehicle, ExpenseItem } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { X, DollarSign, CreditCard, Handshake, ShieldCheck, Sparkles, Send, Percent, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const VehiclePurchaseModal: React.FC<Props> = ({ vehicle, onClose }) => {
-  const { wallet, setWallet, vehicles, setVehicles, user, addToast } = useStore();
+  const { wallet, setWallet, vehicles, setVehicles, expenses, setExpenses, user, addToast } = useStore();
   const [activeMode, setActiveMode] = useState<'OFFER' | 'CASH' | 'CREDIT_CARD'>('OFFER');
   
   // Offer Tab State
@@ -141,10 +141,22 @@ export const VehiclePurchaseModal: React.FC<Props> = ({ vehicle, onClose }) => {
     const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: 'apple-revcat-user-1001', is_for_sale: false } : v);
     setVehicles(updatedVehicles);
 
+    const newExpense: ExpenseItem = {
+      id: 'exp-vehicle-' + Date.now(),
+      user_id: user?.id || 'apple-revcat-user-1001',
+      title: `${vehicle.brand_model} Taşıt Kredi Kartı Taksiti`,
+      category: 'Kredi',
+      amount: Math.round(monthlyPayment),
+      due_date: '28 Ağustos',
+      auto_pay: true,
+      status: 'PENDING'
+    };
+    setExpenses([newExpense, ...expenses]);
+
     addToast({
       type: 'success',
       title: 'Kredi Kartı Taksitli Satın Alım 💳',
-      message: `${vehicle.brand_model} ${installments} taksit planı (Aylık ${formatCurrency(monthlyPayment)}) ile garajınıza eklendi.`
+      message: `${vehicle.brand_model} ${installments} taksit planı ile garajınıza eklendi. Aylık ${formatCurrency(monthlyPayment)} taksit Gelecek Ödemeler Takvimi'ne eklendi.`
     });
     onClose();
   };

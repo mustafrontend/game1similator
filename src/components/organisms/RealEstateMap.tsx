@@ -8,7 +8,7 @@ import { PropertyPurchaseModal } from './PropertyPurchaseModal';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, Home, CheckCircle, Sparkles, Navigation as NavIcon, Layers, Compass, PlusCircle, AlertCircle, X, Key, Tag } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const createCustomMarker = (property: Property, isSelected: boolean) => {
   const isForSale = property.is_for_sale;
@@ -220,10 +220,10 @@ export const RealEstateMap: React.FC = () => {
                       click: () => setSelectedProperty(prop)
                     }}
                   >
-                    <Popup className="custom-leaflet-popup">
-                      <div className="p-1 space-y-1 text-slate-900">
+                    <Popup className="custom-leaflet-popup" minWidth={140}>
+                      <div className="p-1 space-y-1 text-white">
                         <strong className="text-xs font-black block">{prop.title}</strong>
-                        <span className="text-[10px] font-bold text-emerald-600 block">{formatCurrency(prop.price)}</span>
+                        <span className="text-[10px] font-bold text-emerald-400 block">{formatCurrency(prop.price)}</span>
                       </div>
                     </Popup>
                   </Marker>
@@ -287,6 +287,115 @@ export const RealEstateMap: React.FC = () => {
           onClose={() => setPurchaseProperty(null)}
         />
       )}
+
+      {/* New Property Details Form (shown after picking a point on the map) */}
+      <AnimatePresence>
+        {newPropCoords && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 rounded-3xl max-w-md w-full p-6 border-2 border-amber-400/50 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Home className="w-5 h-5 text-amber-400" /> Yeni Mülk Ekle
+                </h3>
+                <button
+                  onClick={() => setNewPropCoords(null)}
+                  className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-[11px] font-semibold text-slate-500">
+                Konum: {newPropCoords.lat.toFixed(4)}, {newPropCoords.lng.toFixed(4)}
+              </p>
+
+              <form onSubmit={handleCreatePropertySubmit} className="space-y-3 text-left">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Mülk Adı</label>
+                  <input
+                    type="text"
+                    value={newPropTitle}
+                    onChange={(e) => setNewPropTitle(e.target.value)}
+                    placeholder="Örn: Boğaz Manzaralı Daire"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Adres</label>
+                  <input
+                    type="text"
+                    value={newPropAddress}
+                    onChange={(e) => setNewPropAddress(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Tür</label>
+                    <select
+                      value={newPropType}
+                      onChange={(e) => setNewPropType(e.target.value as 'RESIDENTIAL' | 'COMMERCIAL')}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                    >
+                      <option value="RESIDENTIAL">Konut</option>
+                      <option value="COMMERCIAL">Ticari</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">İlan Türü</label>
+                    <select
+                      value={newPropListingMode}
+                      onChange={(e) => setNewPropListingMode(e.target.value as 'SALE' | 'RENT')}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                    >
+                      <option value="SALE">Satılık</option>
+                      <option value="RENT">Kiralık</option>
+                    </select>
+                  </div>
+                </div>
+
+                {newPropListingMode === 'SALE' ? (
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Satış Fiyatı (₺)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newPropPrice}
+                      onChange={(e) => setNewPropPrice(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1">Aylık Kira (₺)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newPropRentalPrice}
+                      onChange={(e) => setNewPropRentalPrice(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                )}
+
+                <Button
+                  variant="gold"
+                  type="submit"
+                  className="w-full py-3 text-xs font-black shadow-lg shadow-amber-500/20 mt-1"
+                >
+                  <PlusCircle className="w-4 h-4 mr-1.5" /> Haritaya Ekle
+                </Button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

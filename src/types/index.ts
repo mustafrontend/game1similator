@@ -45,6 +45,7 @@ export interface SocialLoan {
   remaining_amount: number;
   interest_rate: number;
   due_date: string;
+  matures_at: number;
   status: 'PENDING' | 'ACTIVE' | 'REPAID' | 'DEFAULTED';
   last_reminder_sent_at?: string;
 }
@@ -113,6 +114,12 @@ export interface Vehicle {
   is_for_sale: boolean;
   is_for_rent: boolean;
   inspection?: VehicleInspection;
+}
+
+export interface AIFinancialRecommendation {
+  category: 'CASH_FLOW' | 'INVESTMENT' | 'HEALTH' | 'CAREER';
+  title: string;
+  advice: string;
 }
 
 export interface MarketOffer {

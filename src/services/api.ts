@@ -1,4 +1,4 @@
-import { User, Wallet, Property, Vehicle, Job, Asset, SocialLoan, Transaction, UserPortfolio } from '../types';
+import { User, Wallet, Property, Vehicle, Job, Asset, SocialLoan, Transaction, UserPortfolio, AIFinancialRecommendation } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api/v1';
 
@@ -258,5 +258,33 @@ export class ApiService {
     }
     const data = await response.json();
     return data.portfolio || [];
+  }
+
+  public static async getAIFinancialAdvice(snapshot: {
+    cash_balance: number;
+    bank_balance: number;
+    total_liquid: number;
+    credit_score: number;
+    reputation: number;
+    education_level: string;
+    health: number;
+    happiness: number;
+    energy: number;
+    vehicle_count: number;
+    unrented_vehicle_count: number;
+    property_count: number;
+    vacant_property_count: number;
+    active_debts_owed: number;
+  }): Promise<AIFinancialRecommendation[]> {
+    const response = await fetch(`${API_BASE_URL}/ai/financial-advice`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(snapshot)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'AI danışmanlık tavsiyesi alınamadı.');
+    }
+    return data.recommendations || [];
   }
 }

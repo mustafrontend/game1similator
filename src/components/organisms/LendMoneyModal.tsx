@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../../store/useStore';
+import { useStore, GAME_DAY_MS } from '../../store/useStore';
 import { SocialLoan } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -50,6 +50,7 @@ export const LendMoneyModal: React.FC<Props> = ({ isOpen, onClose }) => {
       remaining_amount: interestReturn,
       interest_rate: 0.05,
       due_date: `${durationDays} Gün Sonra`,
+      matures_at: Date.now() + (parseInt(durationDays, 10) || 30) * GAME_DAY_MS,
       status: 'ACTIVE'
     };
 

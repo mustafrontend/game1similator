@@ -34,23 +34,4 @@ export class AIService {
       created_at: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
     };
   }
-
-  /**
-   * Financial Emergency Consultation Assistant
-   */
-  public static getFinancialAdvice(health: number, happiness: number, energy: number, liquidMoney: number): string {
-    if (health < 25) {
-      return '❤️ Sağlığınız Kritik! Hemen Mağaza veya Finans ekranından %33 (1/3) Servet ödemesi yaparak VIP Hastane Ameliyatı olun veya $1.99 İksir paketi satın alın.';
-    }
-    if (happiness < 25) {
-      return '😃 Mutluluğunuz Düşük! Maldivler VIP Tatili satın alarak pasif emlak/borsa karlarınızdaki %50 ceza kesintisini kaldırın.';
-    }
-    if (energy < 25) {
-      return '⚡ Enerjiniz Düşük! VIP Enerji Serumu alarak iş başvuruları ve vardiya çalışmasını tekrar aktif edin.';
-    }
-    if (liquidMoney < 0) {
-      return '⚠️ KMH Eksi Bakiyedesiniz! Yeraltı Piyasasındaki Panama Offshore hesabınızdan bakiyeyi cüzdana çekin veya garajınızdaki araçları kiraya verin.';
-    }
-    return '✅ Finansal ve Yaşamsal Durumunuz Mükemmel! Borsa ve Gayrimenkul yatırımlarına devam edebilirsiniz.';
-  }
 }

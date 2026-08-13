@@ -151,113 +151,115 @@ export const FinancialDashboard: React.FC = () => {
           </Button>
         </div>
 
-        {/* EXPLICIT PENALTIES & WHAT TO DO GUIDE FOR HEALTH, HAPPINESS & ENERGY */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-400" /> {t('debuff_guide_title')}
-            </h3>
-            <span className="text-[11px] font-bold text-slate-400">{t('one_third_wealth')} <strong className="text-sky-300">{formatCurrency(dynamicCashFee)}</strong></span>
-          </div>
+        {/* EXPLICIT PENALTIES & WHAT TO DO GUIDE — only takes up space once a vital actually drops */}
+        {isVitalCritical && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-400" /> {t('debuff_guide_title')}
+              </h3>
+              <span className="text-[11px] font-bold text-slate-400">{t('one_third_wealth')} <strong className="text-sky-300">{formatCurrency(dynamicCashFee)}</strong></span>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* 1. SAĞLIK REHBERİ */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              health <= 20 ? 'bg-rose-950/40 border-rose-500/70 shadow-lg shadow-rose-500/10' : 'bg-slate-950/60 border-slate-800'
-            }`}>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-black text-rose-400 flex items-center gap-1.5">
-                  <Heart className="w-4 h-4 text-rose-400" /> {t('health_drop_title')}
-                </span>
-                <Badge variant={health <= 20 ? 'rose' : 'slate'}>%{health.toFixed(0)}</Badge>
-              </div>
-              <div className="text-[11px] space-y-1.5 text-slate-300 mb-3">
-                <p className="text-rose-300 font-bold">{t('penalty_applied')}</p>
-                <p className="text-slate-400 font-medium">{t('health_penalty_desc')}</p>
-                <p className="text-emerald-300 font-bold mt-1">{t('what_to_do')}</p>
-                <p className="text-slate-300 font-medium">{t('health_action_desc')}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 1. SAĞLIK REHBERİ */}
+              {health <= 20 && (
+                <div className="p-4 rounded-2xl border transition-all bg-rose-950/40 border-rose-500/70 shadow-lg shadow-rose-500/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-black text-rose-400 flex items-center gap-1.5">
+                      <Heart className="w-4 h-4 text-rose-400" /> {t('health_drop_title')}
+                    </span>
+                    <Badge variant="rose">%{health.toFixed(0)}</Badge>
+                  </div>
+                  <div className="text-[11px] space-y-1.5 text-slate-300 mb-3">
+                    <p className="text-rose-300 font-bold">{t('penalty_applied')}</p>
+                    <p className="text-slate-400 font-medium">{t('health_penalty_desc')}</p>
+                    <p className="text-emerald-300 font-bold mt-1">{t('what_to_do')}</p>
+                    <p className="text-slate-300 font-medium">{t('health_action_desc')}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full py-2 text-[11px] font-black border-rose-500 text-rose-300 hover:bg-rose-600 hover:text-white"
+                    onClick={() => handlePayVitalCashInGuide('HEALTH')}
+                    disabled={payingCash}
+                  >
+                    🏥 {formatCurrency(dynamicCashFee)} {t('pay_one_third_btn')}
+                  </Button>
+                </div>
+              )}
+
+              {/* 2. MUTLULUK REHBERİ */}
+              {happiness <= 20 && (
+                <div className="p-4 rounded-2xl border transition-all bg-amber-950/40 border-amber-400/70 shadow-lg shadow-amber-500/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                      <Smile className="w-4 h-4 text-amber-400" /> {t('happiness_drop_title')}
+                    </span>
+                    <Badge variant="gold">%{happiness.toFixed(0)}</Badge>
+                  </div>
+                  <div className="text-[11px] space-y-1.5 text-slate-300 mb-3">
+                    <p className="text-amber-300 font-bold">{t('penalty_applied')}</p>
+                    <p className="text-slate-400 font-medium">{t('happiness_penalty_desc')}</p>
+                    <p className="text-emerald-300 font-bold mt-1">{t('what_to_do')}</p>
+                    <p className="text-slate-300 font-medium">{t('happiness_action_desc')}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full py-2 text-[11px] font-black border-amber-400 text-amber-300 hover:bg-amber-500 hover:text-slate-950"
+                    onClick={() => handlePayVitalCashInGuide('HAPPINESS')}
+                    disabled={payingCash}
+                  >
+                    🌴 {formatCurrency(dynamicCashFee)} {t('pay_one_third_btn')}
+                  </Button>
+                </div>
+              )}
+
+              {/* 3. ENERJİ REHBERİ */}
+              {energy <= 20 && (
+                <div className="p-4 rounded-2xl border transition-all bg-sky-950/40 border-sky-400/70 shadow-lg shadow-sky-500/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-black text-sky-300 flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-sky-400" /> {t('energy_drop_title')}
+                    </span>
+                    <Badge variant="sky">%{energy.toFixed(0)}</Badge>
+                  </div>
+                  <div className="text-[11px] space-y-1.5 text-slate-300 mb-3">
+                    <p className="text-sky-300 font-bold">{t('penalty_applied')}</p>
+                    <p className="text-slate-400 font-medium">{t('energy_penalty_desc')}</p>
+                    <p className="text-emerald-300 font-bold mt-1">{t('what_to_do')}</p>
+                    <p className="text-slate-300 font-medium">{t('energy_action_desc')}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full py-2 text-[11px] font-black border-sky-400 text-sky-300 hover:bg-sky-500 hover:text-white"
+                    onClick={() => handlePayVitalCashInGuide('ENERGY')}
+                    disabled={payingCash}
+                  >
+                    ☕ {formatCurrency(dynamicCashFee)} {t('pay_one_third_btn')}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* UNIVERSAL STORE SHORTCUT BANNER */}
+            <div className="p-3 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 rounded-2xl border border-amber-400/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+              <div className="flex items-center gap-3">
+                <Zap className="w-6 h-6 text-amber-400 animate-pulse shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-amber-300">⭐ {t('buy_elixir')}</p>
+                  <p className="text-[11px] font-semibold text-slate-300">Nakit harcamadan Sağlık, Mutluluk ve Enerji göstergelerinin tümünü anında %100 fulleyin.</p>
+                </div>
               </div>
               <Button
-                variant="outline"
-                className="w-full py-2 text-[11px] font-black border-rose-500 text-rose-300 hover:bg-rose-600 hover:text-white"
-                onClick={() => handlePayVitalCashInGuide('HEALTH')}
-                disabled={payingCash}
+                variant="gold"
+                className="py-2.5 px-4 text-xs font-black shrink-0 whitespace-nowrap shadow-lg shadow-amber-500/20"
+                onClick={() => setActiveTab('store')}
               >
-                🏥 {formatCurrency(dynamicCashFee)} {t('pay_one_third_btn')}
-              </Button>
-            </div>
-
-            {/* 2. MUTLULUK REHBERİ */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              happiness <= 20 ? 'bg-amber-950/40 border-amber-400/70 shadow-lg shadow-amber-500/10' : 'bg-slate-950/60 border-slate-800'
-            }`}>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                  <Smile className="w-4 h-4 text-amber-400" /> {t('happiness_drop_title')}
-                </span>
-                <Badge variant={happiness <= 20 ? 'gold' : 'slate'}>%{happiness.toFixed(0)}</Badge>
-              </div>
-              <div className="text-[11px] space-y-1.5 text-slate-300 mb-3">
-                <p className="text-amber-300 font-bold">{t('penalty_applied')}</p>
-                <p className="text-slate-400 font-medium">{t('happiness_penalty_desc')}</p>
-                <p className="text-emerald-300 font-bold mt-1">{t('what_to_do')}</p>
-                <p className="text-slate-300 font-medium">{t('happiness_action_desc')}</p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full py-2 text-[11px] font-black border-amber-400 text-amber-300 hover:bg-amber-500 hover:text-slate-950"
-                onClick={() => handlePayVitalCashInGuide('HAPPINESS')}
-                disabled={payingCash}
-              >
-                🌴 {formatCurrency(dynamicCashFee)} {t('pay_one_third_btn')}
-              </Button>
-            </div>
-
-            {/* 3. ENERJİ REHBERİ */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              energy <= 20 ? 'bg-sky-950/40 border-sky-400/70 shadow-lg shadow-sky-500/10' : 'bg-slate-950/60 border-slate-800'
-            }`}>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-black text-sky-300 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-sky-400" /> {t('energy_drop_title')}
-                </span>
-                <Badge variant={energy <= 20 ? 'sky' : 'slate'}>%{energy.toFixed(0)}</Badge>
-              </div>
-              <div className="text-[11px] space-y-1.5 text-slate-300 mb-3">
-                <p className="text-sky-300 font-bold">{t('penalty_applied')}</p>
-                <p className="text-slate-400 font-medium">{t('energy_penalty_desc')}</p>
-                <p className="text-emerald-300 font-bold mt-1">{t('what_to_do')}</p>
-                <p className="text-slate-300 font-medium">{t('energy_action_desc')}</p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full py-2 text-[11px] font-black border-sky-400 text-sky-300 hover:bg-sky-500 hover:text-white"
-                onClick={() => handlePayVitalCashInGuide('ENERGY')}
-                disabled={payingCash}
-              >
-                ☕ {formatCurrency(dynamicCashFee)} {t('pay_one_third_btn')}
+                {t('buy_elixir')}
               </Button>
             </div>
           </div>
-
-          {/* UNIVERSAL STORE SHORTCUT BANNER */}
-          <div className="p-3 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 rounded-2xl border border-amber-400/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-            <div className="flex items-center gap-3">
-              <Zap className="w-6 h-6 text-amber-400 animate-pulse shrink-0" />
-              <div>
-                <p className="text-xs font-black text-amber-300">⭐ {t('buy_elixir')}</p>
-                <p className="text-[11px] font-semibold text-slate-300">Nakit harcamadan Sağlık, Mutluluk ve Enerji göstergelerinin tümünü anında %100 fulleyin.</p>
-              </div>
-            </div>
-            <Button
-              variant="gold"
-              className="py-2.5 px-4 text-xs font-black shrink-0 whitespace-nowrap shadow-lg shadow-amber-500/20"
-              onClick={() => setActiveTab('store')}
-            >
-              {t('buy_elixir')}
-            </Button>
-          </div>
-        </div>
+        )}
       </Card>
 
       {/* 2-COLUMN PROMINENT GAME HUD CARDS GRID */}

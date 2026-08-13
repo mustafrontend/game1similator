@@ -182,10 +182,25 @@ export const App: React.FC = () => {
       }
     }, 60000);
 
+    // 4. LENT MONEY MATURITY CHECK (Every 5 seconds — collects loans that reached their due date)
+    const loanInterval = setInterval(() => {
+      useStore.getState().collectMaturedLoans();
+      useStore.getState().resolveUndergroundAuctionIfDue();
+    }, 5000);
+
+    // 5. INCOMING PURCHASE OFFERS ON OWNED ASSETS (Every 35 seconds, chance-based)
+    const offerInterval = setInterval(() => {
+      if (Math.random() < 1) {
+        useStore.getState().generateRandomOffer();
+      }
+    }, 3000);
+
     return () => {
       clearInterval(rentInterval);
       clearInterval(marketInterval);
       clearInterval(vitalInterval);
+      clearInterval(loanInterval);
+      clearInterval(offerInterval);
     };
   }, [isLoading]);
 
