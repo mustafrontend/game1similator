@@ -142,34 +142,9 @@ export const Header: React.FC = () => {
                 variant="gold"
                 size="sm"
                 className="py-1 px-2.5 text-xs font-black"
-                onClick={() => {
-                  const state = useStore.getState();
-                  state.setUser({
-                    id: 'apple-revcat-user-1001',
-                    email: 'apple.user@icloud.com',
-                    username: 'Apple Oyuncusu',
-                    health: 100.0,
-                    happiness: 100.0,
-                    energy: 100.0,
-                    credit_score: 1420,
-                    reputation: 680,
-                    education_level: 'BACHELOR',
-                    title: 'Finans Krallığı Şampiyonu',
-                    status: 'ONLINE',
-                  });
-                  state.setWallet({
-                    id: 'wallet-1001',
-                    user_id: 'apple-revcat-user-1001',
-                    cash_balance: 14500.0,
-                    bank_balance: 185000.0,
-                    total_liquid: 199500.0,
-                    is_joint: false,
-                  });
-                  state.setToken('demo-jwt-token-123456');
-                  state.setIsAuthModalOpen(false);
-                }}
+                onClick={() => setIsAuthModalOpen(true)}
               >
-                 Giriş
+                <LogIn className="w-3.5 h-3.5 mr-1" /> {t('login_signup')}
               </Button>
             )}
           </div>
@@ -302,34 +277,9 @@ export const Header: React.FC = () => {
             <Button
               variant="gold"
               size="sm"
-              onClick={() => {
-                const state = useStore.getState();
-                state.setUser({
-                  id: 'apple-revcat-user-1001',
-                  email: 'apple.user@icloud.com',
-                  username: 'Apple Oyuncusu',
-                  health: 100.0,
-                  happiness: 100.0,
-                  energy: 100.0,
-                  credit_score: 1420,
-                  reputation: 680,
-                  education_level: 'BACHELOR',
-                  title: 'Finans Krallığı Şampiyonu',
-                  status: 'ONLINE',
-                });
-                state.setWallet({
-                  id: 'wallet-1001',
-                  user_id: 'apple-revcat-user-1001',
-                  cash_balance: 14500.0,
-                  bank_balance: 185000.0,
-                  total_liquid: 199500.0,
-                  is_joint: false,
-                });
-                state.setToken('demo-jwt-token-123456');
-                state.setIsAuthModalOpen(false);
-              }}
+              onClick={() => setIsAuthModalOpen(true)}
             >
-              <LogIn className="w-4 h-4 mr-1.5" />  {t('login_signup')}
+              <LogIn className="w-4 h-4 mr-1.5" /> {t('login_signup')}
             </Button>
           )}
         </div>

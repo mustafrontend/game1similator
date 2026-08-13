@@ -79,45 +79,22 @@ interface AppState {
 const savedLang = (localStorage.getItem('virtual_life_language') as LanguageCode) || 'tr';
 const initialLanguageModalState = !localStorage.getItem('virtual_life_language');
 
-// Default initial player profile so first-time app launches are ALWAYS logged in
-const defaultUser: User = {
-  id: 'apple-revcat-user-1001',
-  email: 'apple.user@icloud.com',
-  username: 'Apple Oyuncusu',
-  health: 100.0,
-  happiness: 100.0,
-  energy: 100.0,
-  credit_score: 1420,
-  reputation: 680,
-  education_level: 'BACHELOR',
-  title: 'Finans Krallığı Şampiyonu',
-  status: 'ONLINE',
-};
-
-const defaultWallet: Wallet = {
-  id: 'wallet-1001',
-  user_id: 'apple-revcat-user-1001',
-  cash_balance: 14500.0,
-  bank_balance: 185000.0,
-  total_liquid: 199500.0,
-  is_joint: false,
-};
-
-const savedUser = safeParseStorage<User | null>('vl_user', defaultUser);
+// User is null by default if not logged in yet, so AuthModal presents on launch
+const savedUser = safeParseStorage<User | null>('vl_user', null);
 if (savedUser) {
   savedUser.health = Math.max(0, Math.min(100, savedUser.health ?? 100));
   savedUser.happiness = Math.max(0, Math.min(100, savedUser.happiness ?? 100));
   savedUser.energy = Math.max(0, Math.min(100, savedUser.energy ?? 100));
 }
 
-const savedWallet = safeParseStorage<Wallet | null>('vl_wallet', defaultWallet);
+const savedWallet = safeParseStorage<Wallet | null>('vl_wallet', null);
 
 export const useStore = create<AppState>((set, get) => ({
   user: savedUser,
   wallet: savedWallet,
-  token: localStorage.getItem('virtual_life_token') || 'demo-jwt-token-123456',
+  token: localStorage.getItem('virtual_life_token'),
   activeTab: 'dashboard',
-  isAuthModalOpen: false,
+  isAuthModalOpen: !savedUser, // Show AuthModal automatically on first launch if not logged in
   toasts: [],
   isLoading: true,
   offshoreBalance: safeParseStorage<number>('vl_offshore', 0.0),
@@ -272,6 +249,6 @@ export const useStore = create<AppState>((set, get) => ({
     localStorage.removeItem('virtual_life_token');
     localStorage.removeItem('vl_user');
     localStorage.removeItem('vl_wallet');
-    set({ user: null, wallet: null, token: null });
+    set({ user: null, wallet: null, token: null, isAuthModalOpen: true });
   }
 }));
