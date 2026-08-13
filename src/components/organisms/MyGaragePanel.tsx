@@ -9,7 +9,7 @@ import { Car, Home, Wrench, Key, Warehouse, DollarSign, Shield, Gauge, ShieldChe
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const MyGaragePanel: React.FC = () => {
-  const { user, vehicles, properties, setVehicles, setProperties, offers, acceptOffer, declineOffer, addToast, t } = useStore();
+  const { user, wallet, setWallet, vehicles, properties, setVehicles, setProperties, offers, acceptOffer, declineOffer, addToast, t } = useStore();
   const [inspectVehicle, setInspectVehicle] = useState<Vehicle | null>(null);
   
   // Property Sale Modal State
@@ -132,8 +132,30 @@ export const MyGaragePanel: React.FC = () => {
   const handleCreateNewProperty = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isSale = newPropListingMode === 'SALE';
     const priceVal = parseFloat(newPropPrice) || 4500000;
+    const constructionCost = Math.round(priceVal * 0.70);
+
+    if (!wallet || wallet.total_liquid < constructionCost) {
+      addToast({
+        type: 'error',
+        title: 'Yetersiz Bakiye! ⚠️',
+        message: `"${newPropTitle || 'Mülk'}" projesini inşa etmek için ${formatCurrency(constructionCost)} (%70 İnşaat & Tapu Bedeli) gereklidir.`
+      });
+      return;
+    }
+
+    // Deduct %70 construction cost from wallet
+    const updatedBank = wallet.bank_balance >= constructionCost ? wallet.bank_balance - constructionCost : 0;
+    const remainingCash = wallet.bank_balance >= constructionCost ? wallet.cash_balance : wallet.cash_balance - (constructionCost - wallet.bank_balance);
+
+    setWallet({
+      ...wallet,
+      bank_balance: updatedBank,
+      cash_balance: remainingCash,
+      total_liquid: updatedBank + remainingCash
+    });
+
+    const isSale = newPropListingMode === 'SALE';
     const rentalVal = parseFloat(newPropRentalPrice) || 30000;
 
     // Generate random coordinates around Istanbul
@@ -162,8 +184,8 @@ export const MyGaragePanel: React.FC = () => {
 
     addToast({
       type: 'success',
-      title: 'Yeni Mülk Oluşturuldu & Üstünüze Geçti 🏠',
-      message: `"${newProp.title}" mülkünüz oluşturuldu ${isSale ? 've Harita Piyasasında Satılığa Çıkarıldı.' : 've Portföyünüze Eklendi.'}`
+      title: 'Emlak Projesi İnşa Edildi! 🏗️',
+      message: `"${newProp.title}" için ${formatCurrency(constructionCost)} (%70 İnşaat Bedeli) ödendi ve üstünüze geçti.`
     });
   };
 
