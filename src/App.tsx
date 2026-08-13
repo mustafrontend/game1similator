@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useStore } from './store/useStore';
+import { useStore, GUEST_OWNER_ID } from './store/useStore';
 import { ApiService } from './services/api';
 import { initPurchases } from './services/purchases';
 import { Header } from './components/molecules/Header';
@@ -68,7 +68,7 @@ export const App: React.FC = () => {
         if (vehsRes.length > 0) setVehicles(vehsRes);
         if (jobsRes.length > 0) setJobs(jobsRes);
         if (assetsRes.length > 0) setAssets(assetsRes);
-        if (Array.isArray(portfolioRes)) setPortfolio(portfolioRes);
+        if (portfolioRes.length > 0) setPortfolio(portfolioRes);
 
       } catch (err: any) {
         console.warn('Backend synchronization notice:', err.message);
@@ -90,28 +90,41 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isLoading) return;
 
-    // 1. PASSIVE RENTAL INCOME PUSH NOTIFICATION TIMER (Every 25 seconds)
+    // 1. PASSIVE RENTAL INCOME (owned+rented assets) & TENANT RENT (rented-as-tenant properties) TIMER (Every 25 seconds)
     const rentInterval = setInterval(() => {
       const state = useStore.getState();
-      const userProps = state.properties.filter(p => p.owner_id === 'apple-revcat-user-1001' && (p.is_for_rent || p.tenant_id));
-      const userVehs = state.vehicles.filter(v => v.owner_id === 'apple-revcat-user-1001' && v.is_for_rent);
+      const myId = state.user?.id || GUEST_OWNER_ID;
+      const userProps = state.properties.filter(p => p.owner_id === myId && (p.is_for_rent || p.tenant_id));
+      const userVehs = state.vehicles.filter(v => v.owner_id === myId && v.is_for_rent);
+      const tenantProps = state.properties.filter(p => p.tenant_id === myId && p.owner_id !== myId);
 
       const totalRentYield = userProps.reduce((sum, p) => sum + (p.rental_yield_per_tick || 15000), 0) +
                              userVehs.reduce((sum, v) => sum + (v.daily_rental_price || 2500), 0);
+      const totalRentOwed = tenantProps.reduce((sum, p) => sum + (p.rental_price || 0), 0);
 
-      if (totalRentYield > 0 && state.wallet) {
-        const updatedBank = state.wallet.bank_balance + totalRentYield;
+      if (state.wallet && (totalRentYield > 0 || totalRentOwed > 0)) {
+        const netChange = totalRentYield - totalRentOwed;
+        const updatedBank = state.wallet.bank_balance + netChange;
         state.setWallet({
           ...state.wallet,
           bank_balance: updatedBank,
           total_liquid: state.wallet.cash_balance + updatedBank
         });
 
-        state.addToast({
-          type: 'success',
-          title: state.t('notification_rent_title'),
-          message: `+${state.formatCurrency(totalRentYield)}`
-        });
+        if (totalRentYield > 0) {
+          state.addToast({
+            type: 'success',
+            title: state.t('notification_rent_title'),
+            message: `+${state.formatCurrency(totalRentYield)}`
+          });
+        }
+        if (totalRentOwed > 0) {
+          state.addToast({
+            type: 'warning',
+            title: 'Kira Ödemesi 🏠',
+            message: `-${state.formatCurrency(totalRentOwed)}`
+          });
+        }
       }
     }, 25000);
 
@@ -129,6 +142,24 @@ export const App: React.FC = () => {
         message: `${randomAsset.name} ${isUp ? '▲ +' : '▼ '}${Math.abs(randomAsset.change_24h).toFixed(2)}% | ${state.formatCurrency(randomAsset.current_price)}`
       });
     }, 20000);
+
+    // 2b. LIVE MARKET PRICE FLUCTUATIONS (Every 15 seconds — runs globally, not just while Investment tab is open)
+    const priceInterval = setInterval(() => {
+      const state = useStore.getState();
+      if (state.assets.length === 0) return;
+
+      const updated = state.assets.map((a) => {
+        const deltaPercent = (Math.random() * 4 - 2); // -2% to +2%
+        const newPrice = Math.max(1, a.current_price * (1 + deltaPercent / 100));
+        return {
+          ...a,
+          prev_price: a.current_price,
+          current_price: Math.round(newPrice * 100) / 100,
+          change_24h: Math.round((a.change_24h + deltaPercent) * 100) / 100
+        };
+      });
+      state.setAssets(updated);
+    }, 15000);
 
     // 3. STABLE VITAL LIFECYCLE SIMULATION TIMER (Every 60 seconds, realistic decay)
     const vitalInterval = setInterval(() => {
@@ -149,8 +180,11 @@ export const App: React.FC = () => {
         return;
       }
 
+      const isBroke = !!state.wallet && state.wallet.total_liquid <= 0;
+      const happinessDecay = isBroke ? 2.5 : 0.5; // being broke stings a lot more
+
       const newEnergy = Math.max(0, state.user.energy - 1);
-      const newHappiness = Math.max(0, state.user.happiness - 0.5);
+      const newHappiness = Math.max(0, state.user.happiness - happinessDecay);
       const isExtremeBurnout = newEnergy === 0 || newHappiness === 0;
       const newHealth = isExtremeBurnout ? Math.max(0, state.user.health - 1) : Math.max(80, state.user.health);
 
@@ -180,6 +214,20 @@ export const App: React.FC = () => {
           message: `%${newEnergy.toFixed(0)}`
         });
       }
+
+      if (isBroke) {
+        const wasAlreadyBroke = localStorage.getItem('vl_broke_flag') === '1';
+        if (!wasAlreadyBroke) {
+          localStorage.setItem('vl_broke_flag', '1');
+          state.addToast({
+            type: 'error',
+            title: 'Parasız Kaldın 💸',
+            message: 'Bakiyen tükendi, mutluluğun artık daha hızlı düşüyor.'
+          });
+        }
+      } else {
+        localStorage.removeItem('vl_broke_flag');
+      }
     }, 60000);
 
     // 4. LENT MONEY MATURITY CHECK (Every 5 seconds — collects loans that reached their due date)
@@ -190,14 +238,15 @@ export const App: React.FC = () => {
 
     // 5. INCOMING PURCHASE OFFERS ON OWNED ASSETS (Every 35 seconds, chance-based)
     const offerInterval = setInterval(() => {
-      if (Math.random() < 1) {
+      if (Math.random() < 0.4) {
         useStore.getState().generateRandomOffer();
       }
-    }, 3000);
+    }, 35000);
 
     return () => {
       clearInterval(rentInterval);
       clearInterval(marketInterval);
+      clearInterval(priceInterval);
       clearInterval(vitalInterval);
       clearInterval(loanInterval);
       clearInterval(offerInterval);

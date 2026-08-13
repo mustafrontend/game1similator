@@ -28,31 +28,15 @@ export const InvestmentPanel: React.FC = () => {
   // Filter out any zero or sold portfolio entries
   const activePortfolio = portfolio.filter(p => p.quantity > 0.00001);
 
-  // Hourly / Periodic Live Market Price Fluctuations
+  // Prices tick globally in App.tsx (so they keep moving off this tab too) — just keep the
+  // selected asset's displayed price in sync whenever the shared assets array refreshes.
   useEffect(() => {
-    if (assets.length === 0) return;
-
-    const interval = setInterval(() => {
-      const updated = assets.map((a) => {
-        const deltaPercent = (Math.random() * 4 - 2); // -2% to +2%
-        const newPrice = Math.max(1, a.current_price * (1 + deltaPercent / 100));
-        return {
-          ...a,
-          prev_price: a.current_price,
-          current_price: Math.round(newPrice * 100) / 100,
-          change_24h: Math.round((a.change_24h + deltaPercent) * 100) / 100
-        };
-      });
-      setAssets(updated);
-
-      if (selectedAsset) {
-        const refreshed = updated.find(a => a.id === selectedAsset.id);
-        if (refreshed) setSelectedAsset(refreshed);
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [assets, selectedAsset, setAssets]);
+    if (!selectedAsset) return;
+    const refreshed = assets.find(a => a.id === selectedAsset.id);
+    if (refreshed && refreshed.current_price !== selectedAsset.current_price) {
+      setSelectedAsset(refreshed);
+    }
+  }, [assets, selectedAsset]);
 
   // 1. BUY ASSET (SATIN AL)
   const handleBuyAsset = (e: React.FormEvent) => {

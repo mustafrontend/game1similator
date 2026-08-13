@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../../store/useStore';
+import { useStore, GUEST_OWNER_ID } from '../../store/useStore';
 import { Vehicle, ExpenseItem } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -61,7 +61,7 @@ export const VehiclePurchaseModal: React.FC<Props> = ({ vehicle, onClose }) => {
             cash_balance: wallet.bank_balance < amount ? wallet.cash_balance - (amount - wallet.bank_balance) : wallet.cash_balance,
             total_liquid: wallet.total_liquid - amount
           });
-          const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: 'apple-revcat-user-1001', is_for_sale: false } : v);
+          const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: user?.id || GUEST_OWNER_ID, is_for_sale: false } : v);
           setVehicles(updatedVehicles);
 
           addToast({
@@ -115,7 +115,7 @@ export const VehiclePurchaseModal: React.FC<Props> = ({ vehicle, onClose }) => {
       total_liquid: wallet.total_liquid - vehicle.price
     });
 
-    const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: 'apple-revcat-user-1001', is_for_sale: false } : v);
+    const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: user?.id || GUEST_OWNER_ID, is_for_sale: false } : v);
     setVehicles(updatedVehicles);
 
     addToast({
@@ -138,12 +138,12 @@ export const VehiclePurchaseModal: React.FC<Props> = ({ vehicle, onClose }) => {
       return;
     }
 
-    const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: 'apple-revcat-user-1001', is_for_sale: false } : v);
+    const updatedVehicles = vehicles.map(v => v.id === vehicle.id ? { ...v, owner_id: user?.id || GUEST_OWNER_ID, is_for_sale: false } : v);
     setVehicles(updatedVehicles);
 
     const newExpense: ExpenseItem = {
       id: 'exp-vehicle-' + Date.now(),
-      user_id: user?.id || 'apple-revcat-user-1001',
+      user_id: user?.id || GUEST_OWNER_ID,
       title: `${vehicle.brand_model} Taşıt Kredi Kartı Taksiti`,
       category: 'Kredi',
       amount: Math.round(monthlyPayment),

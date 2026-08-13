@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore } from '../../store/useStore';
+import { useStore, GUEST_OWNER_ID } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -54,7 +54,7 @@ const MapClickHandler: React.FC<{ isAddingMode: boolean; onMapClick: (lat: numbe
 };
 
 export const RealEstateMap: React.FC = () => {
-  const { properties, wallet, setWallet, setProperties, addToast, t } = useStore();
+  const { user, properties, wallet, setWallet, setProperties, addToast, t } = useStore();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [purchaseProperty, setPurchaseProperty] = useState<Property | null>(null);
   const [listingFilter, setListingFilter] = useState<'ALL' | 'FOR_SALE' | 'FOR_RENT'>('ALL');
@@ -100,7 +100,7 @@ export const RealEstateMap: React.FC = () => {
       price: parseFloat(newPropPrice) || 3500000,
       rental_yield_per_tick: Math.round((parseFloat(newPropPrice) || 3500000) * 0.0003),
       maintenance_condition: 100,
-      owner_id: 'apple-revcat-user-1001',
+      owner_id: user?.id || GUEST_OWNER_ID,
       is_for_sale: isSale,
       is_for_rent: !isSale,
       rental_price: parseFloat(newPropRentalPrice) || 25000,

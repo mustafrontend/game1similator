@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../../store/useStore';
+import { useStore, GUEST_OWNER_ID } from '../../store/useStore';
 import { ExpenseItem } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -68,7 +68,7 @@ export const BankLoanModal: React.FC<Props> = ({ onClose }) => {
     const loanTitle = loanType === 'CONSUMER' ? 'Banka İhtiyaç Kredisi Taksiti' : loanType === 'MORTGAGE' ? 'Konut Kredisi Taksiti' : 'Taşıt Kredisi Taksiti';
     const newExpense: ExpenseItem = {
       id: 'exp-loan-' + Date.now(),
-      user_id: user?.id || 'apple-revcat-user-1001',
+      user_id: user?.id || GUEST_OWNER_ID,
       title: loanTitle,
       category: 'Kredi',
       amount: Math.round(monthlyPayment),

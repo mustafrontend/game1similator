@@ -104,6 +104,17 @@ interface AppState {
   deleteAccountData: () => void;
 }
 
+// Fallback owner id used only for the rare case actions fire before login completes
+export const GUEST_OWNER_ID = 'guest-player';
+
+// Plain helpers (not zustand selectors — a selector returning a fresh filtered
+// array every call causes an infinite re-render loop) operating on already-subscribed state.
+export const getOwnedVehicles = (vehicles: Vehicle[], userId?: string | null) =>
+  vehicles.filter(v => v.owner_id === (userId || GUEST_OWNER_ID));
+
+export const getOwnedProperties = (properties: Property[], userId?: string | null) =>
+  properties.filter(p => p.owner_id === (userId || GUEST_OWNER_ID));
+
 export const DEFAULT_INVESTMENT_ASSETS: Asset[] = [
   { id: 'ast-1', symbol: 'THYAO', name: 'Türk Hava Yolları', asset_type: 'STOCK', current_price: 312.50, prev_price: 308.20, change_24h: 1.39 },
   { id: 'ast-2', symbol: 'ASELS', name: 'Aselsan Elektronik', asset_type: 'STOCK', current_price: 74.80, prev_price: 72.50, change_24h: 3.17 },
@@ -315,7 +326,7 @@ export const useStore = create<AppState>((set, get) => ({
         daily_rental_price: Math.round(winningBid * 0.0008),
         condition_percentage: 100,
         has_insurance: true,
-        owner_id: 'apple-revcat-user-1001',
+        owner_id: state.user?.id || GUEST_OWNER_ID,
         is_for_sale: false,
         is_for_rent: false
       }, ...state.vehicles]);
@@ -381,8 +392,8 @@ export const useStore = create<AppState>((set, get) => ({
     const state = get();
     if (!state.user) return;
 
-    const myVehicles = state.vehicles.filter(v => v.owner_id === state.user!.id || v.owner_id === 'apple-revcat-user-1001');
-    const myProperties = state.properties.filter(p => p.owner_id === state.user!.id || p.owner_id === 'apple-revcat-user-1001');
+    const myVehicles = getOwnedVehicles(state.vehicles, state.user.id);
+    const myProperties = getOwnedProperties(state.properties, state.user.id);
     const candidates: (Vehicle | Property)[] = [...myVehicles, ...myProperties];
     if (candidates.length === 0) return;
 
@@ -452,6 +463,7 @@ export const useStore = create<AppState>((set, get) => ({
       'vl_offshore',
       'vl_notification_prompted',
       'vl_vital_immunity',
+      'vl_broke_flag',
     ].forEach((key) => localStorage.removeItem(key));
 
     set({

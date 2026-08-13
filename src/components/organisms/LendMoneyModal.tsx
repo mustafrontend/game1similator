@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore, GAME_DAY_MS } from '../../store/useStore';
+import { useStore, GAME_DAY_MS, GUEST_OWNER_ID } from '../../store/useStore';
 import { SocialLoan } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const LendMoneyModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { wallet, setWallet, socialLoans, setSocialLoans, addToast } = useStore();
+  const { user, wallet, setWallet, socialLoans, setSocialLoans, addToast } = useStore();
 
   const [borrowerName, setBorrowerName] = useState('Burak_CEO');
   const [loanAmount, setLoanAmount] = useState('10000');
@@ -44,7 +44,7 @@ export const LendMoneyModal: React.FC<Props> = ({ isOpen, onClose }) => {
     // Create new SocialLoan object
     const newLoan: SocialLoan = {
       id: 'loan-' + Date.now(),
-      lender_id: 'apple-revcat-user-1001',
+      lender_id: user?.id || GUEST_OWNER_ID,
       borrower_id: borrowerName || 'Burak_CEO',
       principal_amount: amountNum,
       remaining_amount: interestReturn,

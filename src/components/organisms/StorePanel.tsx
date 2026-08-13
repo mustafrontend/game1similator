@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useStore } from '../../store/useStore';
+import { useStore, GUEST_OWNER_ID } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -175,7 +175,7 @@ export const StorePanel: React.FC = () => {
           daily_rental_price: 150000,
           condition_percentage: 100,
           has_insurance: true,
-          owner_id: 'apple-revcat-user-1001',
+          owner_id: user?.id || GUEST_OWNER_ID,
           is_for_sale: false,
           is_for_rent: false,
           image_url: '/logo.jpg'
@@ -192,7 +192,7 @@ export const StorePanel: React.FC = () => {
           price: 450000000,
           rental_yield_per_tick: 350000,
           maintenance_condition: 100,
-          owner_id: 'apple-revcat-user-1001',
+          owner_id: user?.id || GUEST_OWNER_ID,
           is_for_sale: false,
           is_for_rent: false,
           rental_price: 350000

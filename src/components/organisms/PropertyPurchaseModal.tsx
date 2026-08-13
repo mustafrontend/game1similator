@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../../store/useStore';
+import { useStore, GUEST_OWNER_ID } from '../../store/useStore';
 import { ApiService } from '../../services/api';
 import { Property } from '../../types';
 import { Button } from '../atoms/Button';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export const PropertyPurchaseModal: React.FC<Props> = ({ property, onClose }) => {
-  const { wallet, setWallet, properties, setProperties, addToast } = useStore();
+  const { user, wallet, setWallet, properties, setProperties, addToast } = useStore();
   const [activeTab, setActiveTab] = useState<'ACTION' | 'OFFER'>('ACTION');
   const [offerPrice, setOfferPrice] = useState(property ? (property.price * 0.92).toString() : '');
 
@@ -28,6 +28,7 @@ export const PropertyPurchaseModal: React.FC<Props> = ({ property, onClose }) =>
   // 1. BUY TAPU OR SIGN RENTAL CONTRACT WITH NEGATIVE OVERDRAFT SUPPORT & API DB PERSISTENCE
   const handleConfirmTransaction = async () => {
     if (!wallet) return;
+    const myId = user?.id || GUEST_OWNER_ID;
 
     const currentTotal = wallet.cash_balance + wallet.bank_balance;
     const isGoingNegative = currentTotal < cost;
@@ -48,8 +49,8 @@ export const PropertyPurchaseModal: React.FC<Props> = ({ property, onClose }) =>
           ...p,
           is_for_sale: false,
           is_for_rent: false,
-          owner_id: isSale ? 'apple-revcat-user-1001' : p.owner_id,
-          tenant_id: !isSale ? 'apple-revcat-user-1001' : p.tenant_id
+          owner_id: isSale ? myId : p.owner_id,
+          tenant_id: !isSale ? myId : p.tenant_id
         };
       }
       return p;
@@ -122,6 +123,11 @@ export const PropertyPurchaseModal: React.FC<Props> = ({ property, onClose }) =>
               <span className={`text-lg font-black ${isSale ? 'text-amber-400' : 'text-emerald-400'}`}>
                 {formatCurrency(cost)}
               </span>
+              {isSale && (
+                <p className="text-[10px] font-bold text-emerald-400 mt-1">
+                  Kiraya Verirsen: +{formatCurrency(property.rental_yield_per_tick)}/tick
+                </p>
+              )}
             </div>
           </div>
 

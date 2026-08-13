@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../../store/useStore';
+import { useStore, getOwnedVehicles, getOwnedProperties } from '../../store/useStore';
 import { ApiService } from '../../services/api';
 import { AIFinancialRecommendation } from '../../types';
 import { Button } from '../atoms/Button';
@@ -30,8 +30,8 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
 
-  const myVehicles = vehicles.filter(v => v.owner_id === 'apple-revcat-user-1001');
-  const myProperties = properties.filter(p => p.owner_id === 'apple-revcat-user-1001');
+  const myVehicles = getOwnedVehicles(vehicles, user?.id);
+  const myProperties = getOwnedProperties(properties, user?.id);
   const unrentedVehicles = myVehicles.filter(v => !v.is_for_rent);
   const vacantProperties = myProperties.filter(p => !p.is_for_rent && !p.tenant_id);
   const activeDebtsOwed = socialLoans.borrowed.reduce((sum, l) => sum + l.remaining_amount, 0);

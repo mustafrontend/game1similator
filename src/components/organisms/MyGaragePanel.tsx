@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore } from '../../store/useStore';
+import { useStore, GUEST_OWNER_ID, getOwnedVehicles, getOwnedProperties } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
@@ -8,14 +8,16 @@ import { VehicleInspectionModal } from './VehicleInspectionModal';
 import { Car, Home, Wrench, Key, Warehouse, DollarSign, Shield, Gauge, ShieldCheck, Inbox, Check, X, MapPin, Tag, PlusCircle } from 'lucide-react';
 
 export const MyGaragePanel: React.FC = () => {
-  const { vehicles, properties, setVehicles, setProperties, offers, acceptOffer, declineOffer, addToast, t } = useStore();
+  const { user, vehicles, properties, setVehicles, setProperties, offers, acceptOffer, declineOffer, addToast, t } = useStore();
   const [inspectVehicle, setInspectVehicle] = useState<Vehicle | null>(null);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
 
-  const myVehicles = vehicles.filter(v => v.owner_id === 'apple-revcat-user-1001');
-  const myProperties = properties.filter(p => p.owner_id === 'apple-revcat-user-1001');
+  const myId = user?.id || GUEST_OWNER_ID;
+  const myVehicles = getOwnedVehicles(vehicles, myId);
+  const myProperties = getOwnedProperties(properties, myId);
+  const rentedProperties = properties.filter(p => p.tenant_id === myId && p.owner_id !== myId);
 
   const handleServiceVehicle = (veh: Vehicle) => {
     const updated = vehicles.map(v => v.id === veh.id ? { ...v, condition_percentage: 100 } : v);
@@ -174,6 +176,31 @@ export const MyGaragePanel: React.FC = () => {
           })}
         </div>
       </Card>
+
+      {/* PROPERTIES I RENT AS A TENANT (deposit paid, not owner) */}
+      {rentedProperties.length > 0 && (
+        <Card className="border-slate-800 bg-slate-950 p-5">
+          <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+            <Key className="w-5 h-5 text-sky-400" /> Kiracısı Olduğum Mülkler ({rentedProperties.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {rentedProperties.map(prop => (
+              <div key={prop.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-base font-black text-white">{prop.title}</h4>
+                    <p className="text-[11px] font-semibold text-slate-400">{prop.address_name}</p>
+                  </div>
+                  <Badge variant="sky">KİRACIYIM</Badge>
+                </div>
+                <p className="text-xs font-black text-rose-300 pt-2 border-t border-slate-800">
+                  Ödediğim Kira: -{formatCurrency(prop.rental_price)}/tick
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Inspection Modal */}
       {inspectVehicle && (
