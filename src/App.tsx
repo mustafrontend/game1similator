@@ -19,6 +19,7 @@ import { StorePanel } from './components/organisms/StorePanel';
 import { VitalLowOfferModal } from './components/organisms/VitalLowOfferModal';
 import { LanguageSelectModal } from './components/organisms/LanguageSelectModal';
 import { NotificationPermissionModal } from './components/organisms/NotificationPermissionModal';
+import { AuthModal } from './components/organisms/AuthModal';
 import { ToastContainer } from './components/atoms/ToastContainer';
 import { Loader2, Sparkles } from 'lucide-react';
 
@@ -129,7 +130,6 @@ export const App: React.FC = () => {
       // Check if user has immunity active (e.g. after refill / elixir / vacation / surgery)
       const immunityUntil = parseInt(localStorage.getItem('vl_vital_immunity') || '0', 10);
       if (Date.now() < immunityUntil) {
-        // Immunity active: Lock vitals at 100%
         if (state.user.health < 100 || state.user.happiness < 100 || state.user.energy < 100) {
           state.setUser({
             ...state.user,
@@ -141,10 +141,6 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Realistic, slow decay rules:
-      // Energy: -1% per minute
-      // Happiness: -1% per 2 minutes
-      // Health: ONLY drops if Energy is 0% OR Happiness is 0% (chronic fatigue/depression)
       const newEnergy = Math.max(0, state.user.energy - 1);
       const newHappiness = Math.max(0, state.user.happiness - 0.5);
       const isExtremeBurnout = newEnergy === 0 || newHappiness === 0;
@@ -157,7 +153,6 @@ export const App: React.FC = () => {
         energy: newEnergy
       });
 
-      // Notify ONLY on critical transition thresholds
       if (newHealth <= 25 && state.user.health > 25) {
         state.addToast({
           type: 'error',
@@ -218,6 +213,7 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col font-sans antialiased pb-44 md:pb-16 selection:bg-sky-500 selection:text-white">
       <ToastContainer />
+      <AuthModal />
       <LanguageSelectModal />
       <NotificationPermissionModal />
       <VitalLowOfferModal />
@@ -248,7 +244,7 @@ export const App: React.FC = () => {
           <img src="/logo.jpg" alt="Virtual Life Footer Logo" className="w-7 h-7 rounded-xl object-cover border border-amber-400/60" />
           <span className="font-black text-white text-sm">VIRTUAL LIFE</span>
         </div>
-        <p>Virtual Life & Economy Simulation &copy; 2026 • Live Python Backend (Port 5050)</p>
+        <p>Virtual Life & Economy Simulation &copy; 2026 • Live Backend</p>
       </footer>
 
       <BottomNav />
