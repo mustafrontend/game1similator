@@ -145,6 +145,7 @@ export interface Job {
   min_health_req: number;
   min_happiness_req: number;
   is_eligible?: boolean;
+  creator_id?: string | null;
 }
 
 export interface UserJob {
