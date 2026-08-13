@@ -37,6 +37,7 @@ const createCustomMarker = (property: Property, isSelected: boolean) => {
 const MapViewController: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap();
   React.useEffect(() => {
+    map.invalidateSize();
     map.flyTo(center, zoom, { duration: 1.5 });
   }, [center, zoom, map]);
   return null;
@@ -215,7 +216,7 @@ export const RealEstateMap: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex-1 rounded-2xl overflow-hidden border border-slate-800 relative shadow-inner">
+          <div className="w-full h-[60vh] min-h-[420px] max-h-[600px] rounded-2xl overflow-hidden border border-slate-800 relative shadow-inner z-0">
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}

@@ -268,8 +268,151 @@ const savedWallet = safeParseStorage<Wallet | null>('vl_wallet', null);
 const initialAssets = safeParseStorage<Asset[]>('vl_assets', DEFAULT_INVESTMENT_ASSETS);
 const finalAssets = initialAssets.length > 0 ? initialAssets : DEFAULT_INVESTMENT_ASSETS;
 
+export const DEFAULT_PROPERTIES: Property[] = [
+  {
+    id: 'prop-def-1',
+    title: 'Kadıköy Moda Deniz Manzaralı Daire',
+    property_type: 'RESIDENTIAL',
+    latitude: 40.9856,
+    longitude: 29.0264,
+    address_name: 'Kadıköy / Moda Sahil Sokak No:12',
+    price: 6500000,
+    rental_yield_per_tick: 22500,
+    maintenance_condition: 100,
+    owner_id: 'AI_MUTEAHHIT',
+    is_for_sale: true,
+    is_for_rent: false,
+    rental_price: 35000
+  },
+  {
+    id: 'prop-def-2',
+    title: 'Beykoz Konakları Lüks Müstakil Villa',
+    property_type: 'RESIDENTIAL',
+    latitude: 41.1340,
+    longitude: 29.1020,
+    address_name: 'Beykoz / Konaklar Mevkii No:4',
+    price: 35000000,
+    rental_yield_per_tick: 120000,
+    maintenance_condition: 100,
+    owner_id: 'AI_MUTEAHHIT',
+    is_for_sale: true,
+    is_for_rent: false,
+    rental_price: 180000
+  },
+  {
+    id: 'prop-def-3',
+    title: 'Levent Kanyon Yanı Lüks Rezidans',
+    property_type: 'RESIDENTIAL',
+    latitude: 41.0782,
+    longitude: 29.0118,
+    address_name: 'Büyükdere Cad. Levent No:195',
+    price: 28000000,
+    rental_yield_per_tick: 95000,
+    maintenance_condition: 100,
+    owner_id: 'AI_MUTEAHHIT',
+    is_for_sale: false,
+    is_for_rent: true,
+    rental_price: 140000
+  },
+  {
+    id: 'prop-def-4',
+    title: 'Nişantaşı Abdi İpekçi Mağaza & Ofis Katı',
+    property_type: 'COMMERCIAL',
+    latitude: 41.0500,
+    longitude: 28.9920,
+    address_name: 'Nişantaşı / Şişli İstanbul',
+    price: 45000000,
+    rental_yield_per_tick: 160000,
+    maintenance_condition: 100,
+    owner_id: 'AI_MUTEAHHIT',
+    is_for_sale: true,
+    is_for_rent: false,
+    rental_price: 220000
+  },
+  {
+    id: 'prop-def-5',
+    title: 'Bebek Boğaz Yalı Dairesi',
+    property_type: 'RESIDENTIAL',
+    latitude: 41.0760,
+    longitude: 29.0430,
+    address_name: 'Bebek / Cevdet Paşa Cad.',
+    price: 95000000,
+    rental_yield_per_tick: 350000,
+    maintenance_condition: 100,
+    owner_id: 'AI_MUTEAHHIT',
+    is_for_sale: true,
+    is_for_rent: false,
+    rental_price: 450000
+  }
+];
+
+export const DEFAULT_VEHICLES: Vehicle[] = [
+  {
+    id: 'veh-def-1',
+    brand_model: 'Porsche 911 GT3 RS (AI İlan)',
+    vehicle_type: 'CAR',
+    price: 14500000,
+    daily_rental_price: 45000,
+    condition_percentage: 98,
+    has_insurance: true,
+    tramer_damage_cost: 0,
+    has_heavy_damage: false,
+    owner_id: 'AI_GALERI',
+    is_for_sale: true,
+    is_for_rent: true
+  },
+  {
+    id: 'veh-def-2',
+    brand_model: 'Mercedes-AMG G63 V8 BiTurbo (AI İlan)',
+    vehicle_type: 'CAR',
+    price: 18200000,
+    daily_rental_price: 55000,
+    condition_percentage: 100,
+    has_insurance: true,
+    tramer_damage_cost: 0,
+    has_heavy_damage: false,
+    owner_id: 'AI_GALERI',
+    is_for_sale: true,
+    is_for_rent: false
+  },
+  {
+    id: 'veh-def-3',
+    brand_model: 'BMW M5 Competition V8 (AI İlan)',
+    vehicle_type: 'CAR',
+    price: 9800000,
+    daily_rental_price: 32000,
+    condition_percentage: 95,
+    has_insurance: true,
+    tramer_damage_cost: 0,
+    has_heavy_damage: false,
+    owner_id: 'AI_GALERI',
+    is_for_sale: true,
+    is_for_rent: true
+  },
+  {
+    id: 'veh-def-4',
+    brand_model: 'Ducati Panigale V4 S Superbike (AI İlan)',
+    vehicle_type: 'MOTORCYCLE',
+    price: 1850000,
+    daily_rental_price: 8500,
+    condition_percentage: 100,
+    has_insurance: true,
+    tramer_damage_cost: 0,
+    has_heavy_damage: false,
+    owner_id: 'AI_GALERI',
+    is_for_sale: true,
+    is_for_rent: true
+  }
+];
+
 const initialJobs = safeParseStorage<Job[]>('vl_jobs', DEFAULT_JOB_LISTINGS);
 const finalJobs = initialJobs.length > 0 ? initialJobs : DEFAULT_JOB_LISTINGS;
+
+const initialProps = safeParseStorage<Property[]>('vl_properties', DEFAULT_PROPERTIES);
+const finalProps = initialProps.length > 0 ? initialProps : DEFAULT_PROPERTIES;
+
+const initialVehs = safeParseStorage<Vehicle[]>('vl_vehicles', DEFAULT_VEHICLES);
+const finalVehs = initialVehs.length > 0 ? initialVehs : DEFAULT_VEHICLES;
 
 export const useStore = create<AppState>((set, get) => ({
   user: savedUser,
@@ -291,8 +434,8 @@ export const useStore = create<AppState>((set, get) => ({
   t: (key) => getTranslation(get().language, key),
   formatCurrency: (amount) => formatCurrencyByLanguage(amount, get().language),
 
-  properties: safeParseStorage<Property[]>('vl_properties', []),
-  vehicles: safeParseStorage<Vehicle[]>('vl_vehicles', []),
+  properties: finalProps,
+  vehicles: finalVehs,
   jobs: finalJobs,
   assets: finalAssets,
   portfolio: safeParseStorage<UserPortfolio[]>('vl_portfolio', []),

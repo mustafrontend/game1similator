@@ -394,7 +394,7 @@ export const App: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 pb-24 md:pb-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 pb-36 sm:pb-32">
       <Header />
       <ToastContainer />
       <VitalLowOfferModal />
@@ -406,9 +406,9 @@ export const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Bottom Sticky Mobile & Desktop Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800 backdrop-blur-xl px-2 py-2 shadow-2xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-around overflow-x-auto scrollbar-none gap-1 sm:gap-2">
+      {/* Floating 2-Row Mobile & Desktop Navigation Bar elevated above mobile notch */}
+      <nav className="fixed bottom-3 left-2 right-2 md:left-6 md:right-6 z-40 bg-slate-950/95 border border-slate-800 rounded-2xl backdrop-blur-xl p-1.5 sm:p-2 shadow-2xl shadow-black/90">
+        <div className="max-w-7xl mx-auto grid grid-cols-6 gap-1 sm:gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTabState === item.id;
@@ -417,14 +417,14 @@ export const App: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id as any)}
-                className={`flex flex-col items-center justify-center min-w-[56px] py-1.5 px-2 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer ${
                   isActive
                     ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-500/20 scale-105'
                     : 'text-slate-400 hover:text-white hover:bg-slate-900'
                 }`}
               >
-                <Icon className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px] font-bold tracking-tight whitespace-nowrap">{item.label}</span>
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 mb-0.5" />
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-tight whitespace-nowrap truncate max-w-full">{item.label}</span>
               </button>
             );
           })}
