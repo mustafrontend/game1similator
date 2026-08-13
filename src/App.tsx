@@ -73,6 +73,33 @@ export const App: React.FC = () => {
         if (meRes) {
           setUser(meRes.user);
           setWallet(meRes.wallet);
+        } else {
+          const currentState = useStore.getState();
+          if (!currentState.user) {
+            currentState.setUser({
+              id: 'apple-revcat-user-1001',
+              email: 'apple.user@icloud.com',
+              username: 'Apple Oyuncusu',
+              health: 100.0,
+              happiness: 100.0,
+              energy: 100.0,
+              credit_score: 1420,
+              reputation: 680,
+              education_level: 'BACHELOR',
+              title: 'Finans Krallığı Şampiyonu',
+              status: 'ONLINE',
+            });
+          }
+          if (!currentState.wallet) {
+            currentState.setWallet({
+              id: 'wallet-1001',
+              user_id: 'apple-revcat-user-1001',
+              cash_balance: 14500.0,
+              bank_balance: 185000.0,
+              total_liquid: 199500.0,
+              is_joint: false,
+            });
+          }
         }
 
         if (propsRes.length > 0) setProperties(propsRes);

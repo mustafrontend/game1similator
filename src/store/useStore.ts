@@ -79,18 +79,43 @@ interface AppState {
 const savedLang = (localStorage.getItem('virtual_life_language') as LanguageCode) || 'tr';
 const initialLanguageModalState = !localStorage.getItem('virtual_life_language');
 
-// Ensure saved user has full vitals by default
-const savedUser = safeParseStorage<User | null>('vl_user', null);
+// Default initial player profile so first-time app launches are ALWAYS logged in
+const defaultUser: User = {
+  id: 'apple-revcat-user-1001',
+  email: 'apple.user@icloud.com',
+  username: 'Apple Oyuncusu',
+  health: 100.0,
+  happiness: 100.0,
+  energy: 100.0,
+  credit_score: 1420,
+  reputation: 680,
+  education_level: 'BACHELOR',
+  title: 'Finans Krallığı Şampiyonu',
+  status: 'ONLINE',
+};
+
+const defaultWallet: Wallet = {
+  id: 'wallet-1001',
+  user_id: 'apple-revcat-user-1001',
+  cash_balance: 14500.0,
+  bank_balance: 185000.0,
+  total_liquid: 199500.0,
+  is_joint: false,
+};
+
+const savedUser = safeParseStorage<User | null>('vl_user', defaultUser);
 if (savedUser) {
   savedUser.health = Math.max(0, Math.min(100, savedUser.health ?? 100));
   savedUser.happiness = Math.max(0, Math.min(100, savedUser.happiness ?? 100));
   savedUser.energy = Math.max(0, Math.min(100, savedUser.energy ?? 100));
 }
 
+const savedWallet = safeParseStorage<Wallet | null>('vl_wallet', defaultWallet);
+
 export const useStore = create<AppState>((set, get) => ({
   user: savedUser,
-  wallet: safeParseStorage<Wallet | null>('vl_wallet', null),
-  token: localStorage.getItem('virtual_life_token'),
+  wallet: savedWallet,
+  token: localStorage.getItem('virtual_life_token') || 'demo-jwt-token-123456',
   activeTab: 'dashboard',
   isAuthModalOpen: false,
   toasts: [],
@@ -128,11 +153,13 @@ export const useStore = create<AppState>((set, get) => ({
       localStorage.setItem('vl_user', JSON.stringify(sanitized));
       set({ user: sanitized });
     } else {
+      localStorage.removeItem('vl_user');
       set({ user: null });
     }
   },
   setWallet: (wallet) => {
     if (wallet) localStorage.setItem('vl_wallet', JSON.stringify(wallet));
+    else localStorage.removeItem('vl_wallet');
     set({ wallet });
   },
   setToken: (token) => {
