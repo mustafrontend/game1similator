@@ -228,6 +228,15 @@ export const App: React.FC = () => {
       } else {
         localStorage.removeItem('vl_broke_flag');
       }
+
+      // Auto-process 1 monthly installment cycle for active bank loans every 60s (1 In-Game Month)
+      const activeLoans = state.activeBankLoans;
+      if (activeLoans.length > 0) {
+        const loanToPay = activeLoans[0];
+        if (state.wallet && state.wallet.total_liquid >= loanToPay.monthly_payment) {
+          state.payBankLoanInstallment(loanToPay.id);
+        }
+      }
     }, 60000);
 
     // 4. LENT MONEY MATURITY CHECK (Every 5 seconds — collects loans that reached their due date)
