@@ -19,6 +19,7 @@ import { AuthModal } from './components/organisms/AuthModal';
 import { ToastContainer } from './components/atoms/ToastContainer';
 import { VitalLowOfferModal } from './components/organisms/VitalLowOfferModal';
 import { NotificationPermissionModal } from './components/organisms/NotificationPermissionModal';
+import { LanguageSelectModal } from './components/organisms/LanguageSelectModal';
 import { LayoutDashboard, Compass, Car, Warehouse, Skull, Trophy, Briefcase, Users, LineChart, MessageSquare, User, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -356,6 +357,7 @@ export const App: React.FC = () => {
       <ToastContainer />
       <VitalLowOfferModal />
       <NotificationPermissionModal />
+      <LanguageSelectModal />
 
       {/* Main Container */}
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1">
