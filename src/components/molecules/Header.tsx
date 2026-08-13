@@ -95,26 +95,46 @@ export const Header: React.FC = () => {
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* MOBILE COMPACT HEADER (ULTRA SLEEK SINGLE ROW OR 2 ROWS ON ERROR) */}
+      {/* MOBILE COMPACT HEADER (ULTRA SLEEK SINGLE ROW WITH ALL VITALS) */}
       {/* ------------------------------------------------------------- */}
-      <div className="block md:hidden max-w-7xl mx-auto px-3 py-2">
-        {/* ROW 1: Logo on Left, Info & Balance on Right */}
-        <div className="flex items-center justify-between gap-2">
+      <div className="block md:hidden max-w-7xl mx-auto px-2.5 py-2">
+        {/* ROW 1: Logo on Left, Vitals in Middle, Info & Balance on Right */}
+        <div className="flex items-center justify-between gap-1.5 overflow-x-auto scrollbar-none">
           {/* Logo + Title */}
-          <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => setActiveTab('dashboard')}>
-            <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-xl object-cover border border-amber-400 shadow-md" />
-            <span className="font-black text-sm text-white tracking-tight">VIRTUAL LIFE</span>
+          <div className="flex items-center gap-1.5 cursor-pointer shrink-0" onClick={() => setActiveTab('dashboard')}>
+            <img src="/logo.jpg" alt="Logo" className="w-7 h-7 rounded-xl object-cover border border-amber-400 shadow-md" />
+            <span className="font-black text-xs text-white tracking-tight hidden xs:inline">VIRTUAL LIFE</span>
           </div>
 
+          {/* MOBILE COMPACT VITALS BADGES (SINGLE HORIZONTAL ROW) */}
+          {user && (
+            <div className="flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-xl border border-slate-800 shrink-0">
+              <span className="flex items-center gap-0.5 text-[10px] font-black text-rose-400" title="Sağlık">
+                <Heart className="w-3 h-3 text-rose-400 shrink-0" />
+                <span>{(user.health ?? 100).toFixed(0)}%</span>
+              </span>
+              <span className="text-slate-700 text-[10px] font-bold">•</span>
+              <span className="flex items-center gap-0.5 text-[10px] font-black text-amber-400" title="Mutluluk">
+                <Smile className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>{(user.happiness ?? 100).toFixed(0)}%</span>
+              </span>
+              <span className="text-slate-700 text-[10px] font-bold">•</span>
+              <span className="flex items-center gap-0.5 text-[10px] font-black text-sky-400" title="Enerji">
+                <Zap className="w-3 h-3 text-sky-400 shrink-0" />
+                <span>{(user.energy ?? 100).toFixed(0)}%</span>
+              </span>
+            </div>
+          )}
+
           {/* Right Controls (Language, Money, Profile) */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             {/* Language Flag Button */}
             <button
               onClick={() => setIsLanguageModalOpen(true)}
-              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-black text-slate-200 cursor-pointer flex items-center gap-1"
+              className="px-1.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-black text-slate-200 cursor-pointer flex items-center gap-0.5"
             >
               <span>{currentLanguageObj.flag}</span>
-              <span className="text-[10px] uppercase">{currentLanguageObj.code}</span>
+              <span className="uppercase text-[9px]">{currentLanguageObj.code}</span>
             </button>
 
             {/* Money & Profile Button */}
@@ -122,11 +142,11 @@ export const Header: React.FC = () => {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-xs font-black transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2 py-1 rounded-xl border text-[11px] font-black transition-all cursor-pointer ${
                     isNegative ? 'bg-rose-500/20 border-rose-500/60 text-rose-400' : 'bg-amber-500/20 border-amber-400/50 text-amber-300'
                   }`}
                 >
-                  <WalletIcon className="w-3.5 h-3.5" />
+                  <WalletIcon className="w-3 h-3" />
                   <span>{formatCurrency(totalLiquidMoney)}</span>
                 </button>
                 <button
@@ -134,17 +154,17 @@ export const Header: React.FC = () => {
                   className="p-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400"
                   title="Çıkış Yap"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-3 h-3" />
                 </button>
               </div>
             ) : (
               <Button
                 variant="gold"
                 size="sm"
-                className="py-1 px-2.5 text-xs font-black"
+                className="py-1 px-2 text-[11px] font-black"
                 onClick={() => setIsAuthModalOpen(true)}
               >
-                <LogIn className="w-3.5 h-3.5 mr-1" /> {t('login_signup')}
+                <LogIn className="w-3 h-3 mr-1" /> {t('login_signup')}
               </Button>
             )}
           </div>

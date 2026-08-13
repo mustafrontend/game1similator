@@ -3,16 +3,18 @@ import { useStore } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
-import { User as UserIcon, ShieldCheck, RefreshCw, Trash2, Edit3, Check, Crown, Mail, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Trash2, Edit3, Check, Crown, Mail, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ApiService } from '../../services/api';
+import { restoreRealPurchases } from '../../services/purchases';
 
 export const UserProfilePanel: React.FC = () => {
-  const { user, setUser, logout, addToast, t } = useStore();
+  const { user, setUser, deleteAccountData, addToast, t } = useStore();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [newUsername, setNewUsername] = useState(user?.username || 'Apple Player');
-  const [syncingApple, setSyncingApple] = useState(false);
+  const [newUsername, setNewUsername] = useState(user?.username || 'Oyuncu');
   const [restoring, setRestoring] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSaveUsername = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,49 +34,56 @@ export const UserProfilePanel: React.FC = () => {
     });
   };
 
-  const handleSyncAppleID = () => {
-    setSyncingApple(true);
-    setTimeout(() => {
-      setSyncingApple(false);
+  const handleRestorePurchases = async () => {
+    setRestoring(true);
+    try {
+      const customerInfo = await restoreRealPurchases();
+      const activeCount = Object.keys(customerInfo.entitlements.active).length;
 
-      // Simulate Apple ID Name Extraction
-      const appleName = 'Apple Oyuncusu';
-      if (user) {
-        setUser({
-          ...user,
-          username: user.username || appleName,
-          email: user.email || 'apple.user@icloud.com'
-        });
+      if (activeCount > 0 && user) {
+        setUser({ ...user, title: 'VIP Gold Vatandaş' });
       }
 
       addToast({
-        type: 'success',
-        title: 'Apple ID Senkronize Edildi ',
-        message: 'Apple ID hesabınız ve RevenueCat satın alımlarınız eşleşti.'
+        type: activeCount > 0 ? 'success' : 'info',
+        title: 'Satın Alımları Geri Yükle',
+        message: activeCount > 0
+          ? `${activeCount} aktif satın alım/üyelik geri yüklendi.`
+          : 'Bu Apple hesabına bağlı aktif bir satın alım bulunamadı.'
       });
-    }, 1200);
-  };
-
-  const handleRestorePurchases = () => {
-    setRestoring(true);
-    setTimeout(() => {
-      setRestoring(false);
+    } catch (err: any) {
       addToast({
-        type: 'success',
-        title: 'Satın Alımları Geri Yükle 🔄',
-        message: 'Tüm aktif mağaza satın alımları ve VIP üyelikler başarıyla geri yüklendi.'
+        type: 'error',
+        title: 'Geri Yükleme Başarısız',
+        message: err?.message || 'Satın alımlar geri yüklenemedi.'
       });
-    }, 1500);
+    } finally {
+      setRestoring(false);
+    }
   };
 
-  const handleDeleteAccount = () => {
-    setShowDeleteModal(false);
-    addToast({
-      type: 'warning',
-      title: 'Hesap Silindi 🗑️',
-      message: 'Hesabınız ve tüm verileriniz App Store kurallarına uygun olarak kalıcı olarak silindi.'
-    });
-    logout();
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      await ApiService.deleteAccount(user.email);
+      deleteAccountData();
+      setShowDeleteModal(false);
+
+      addToast({
+        type: 'warning',
+        title: 'Hesap Silindi',
+        message: 'Hesabınız ve tüm verileriniz kalıcı olarak silindi.'
+      });
+    } catch (err: any) {
+      addToast({
+        type: 'error',
+        title: 'Silme İşlemi Başarısız',
+        message: err?.message || 'Hesabınız silinemedi, lütfen tekrar deneyin.'
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -106,7 +115,7 @@ export const UserProfilePanel: React.FC = () => {
                 </form>
               ) : (
                 <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-black text-white">{user?.username || 'Apple Oyuncusu'}</h2>
+                  <h2 className="text-2xl font-black text-white">{user?.username || 'Oyuncu'}</h2>
                   <button
                     onClick={() => setIsEditingUsername(true)}
                     className="p-1.5 text-slate-400 hover:text-amber-400 bg-slate-900 border border-slate-700 rounded-lg transition-all"
@@ -120,7 +129,7 @@ export const UserProfilePanel: React.FC = () => {
 
               <p className="text-xs font-bold text-slate-300 mt-1 flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                <span>{user?.email || 'apple.user@icloud.com'}</span>
+                <span>{user?.email || ''}</span>
               </p>
             </div>
           </div>
@@ -131,23 +140,13 @@ export const UserProfilePanel: React.FC = () => {
         </div>
       </Card>
 
-      {/* REVENUECAT / APP STORE COMPLIANCE CONTROLS CARD */}
+      {/* APP STORE COMPLIANCE CONTROLS CARD */}
       <Card className="border-slate-800 bg-slate-950 p-6 space-y-4">
         <h3 className="text-lg font-black text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-          <span></span> App Store & Apple ID Giriş Senkronizasyonu
+          App Store Hesap İşlemleri
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Button
-            variant="secondary"
-            className="py-3 text-xs font-black border border-slate-700 hover:bg-slate-800 flex items-center justify-center gap-2"
-            disabled={syncingApple}
-            onClick={handleSyncAppleID}
-          >
-            <ShieldCheck className="w-4 h-4 text-sky-400" />
-            {syncingApple ? t('processing') : ' Apple Hesabımı / İsmi Yükle'}
-          </Button>
-
+        <div className="grid grid-cols-1 gap-4">
           <Button
             variant="secondary"
             className="py-3 text-xs font-black border border-slate-700 hover:bg-slate-800 flex items-center justify-center gap-2"
@@ -155,7 +154,7 @@ export const UserProfilePanel: React.FC = () => {
             onClick={handleRestorePurchases}
           >
             <RefreshCw className={`w-4 h-4 text-amber-400 ${restoring ? 'animate-spin' : ''}`} />
-            {restoring ? t('processing') : '🔄 Satın Alımları Geri Yükle'}
+            {restoring ? t('processing') : 'Satın Alımları Geri Yükle'}
           </Button>
         </div>
 
@@ -196,11 +195,11 @@ export const UserProfilePanel: React.FC = () => {
               </p>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <Button variant="secondary" className="py-2.5 text-xs font-bold" onClick={() => setShowDeleteModal(false)}>
+                <Button variant="secondary" className="py-2.5 text-xs font-bold" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
                   Vazgeç
                 </Button>
-                <Button variant="outline" className="py-2.5 text-xs font-black border-rose-500 text-rose-300 hover:bg-rose-600 hover:text-white" onClick={handleDeleteAccount}>
-                  Evet, Kalıcı Sil
+                <Button variant="outline" className="py-2.5 text-xs font-black border-rose-500 text-rose-300 hover:bg-rose-600 hover:text-white" onClick={handleDeleteAccount} disabled={deleting}>
+                  {deleting ? t('processing') : 'Evet, Kalıcı Sil'}
                 </Button>
               </div>
             </motion.div>

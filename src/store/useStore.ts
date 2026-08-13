@@ -74,6 +74,7 @@ interface AppState {
   declineOffer: (offerId: string) => void;
 
   logout: () => void;
+  deleteAccountData: () => void;
 }
 
 const savedLang = (localStorage.getItem('virtual_life_language') as LanguageCode) || 'tr';
@@ -250,5 +251,40 @@ export const useStore = create<AppState>((set, get) => ({
     localStorage.removeItem('vl_user');
     localStorage.removeItem('vl_wallet');
     set({ user: null, wallet: null, token: null, isAuthModalOpen: true });
+  },
+
+  // Permanently purges every locally stored game record for the account (App Store Guideline 5.1.1)
+  deleteAccountData: () => {
+    [
+      'virtual_life_token',
+      'vl_user',
+      'vl_wallet',
+      'vl_properties',
+      'vl_vehicles',
+      'vl_portfolio',
+      'vl_loans',
+      'vl_transactions',
+      'vl_expenses',
+      'vl_offshore',
+      'vl_notification_prompted',
+      'vl_vital_immunity',
+    ].forEach((key) => localStorage.removeItem(key));
+
+    set({
+      user: null,
+      wallet: null,
+      token: null,
+      properties: [],
+      vehicles: [],
+      jobs: [],
+      assets: [],
+      portfolio: [],
+      socialLoans: { lent: [], borrowed: [] },
+      transactions: [],
+      expenses: [],
+      offers: [],
+      offshoreBalance: 0,
+      isAuthModalOpen: true,
+    });
   }
 }));

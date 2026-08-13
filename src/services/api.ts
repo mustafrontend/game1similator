@@ -142,25 +142,23 @@ export class ApiService {
   }
 
   /**
-   * Real Social Sign In (Apple / Google)
+   * Permanently deletes the account record (App Store Guideline 5.1.1)
    */
-  public static async socialAuth(provider: 'APPLE' | 'GOOGLE', email?: string, username?: string): Promise<{ token: string; user: User; wallet: Wallet }> {
-    const defaultEmail = provider === 'APPLE' ? 'apple.user@icloud.com' : 'google.user@gmail.com';
-    const defaultName = provider === 'APPLE' ? 'Apple Oyuncusu' : 'Google Oyuncusu';
+  public static async deleteAccount(email: string): Promise<void> {
+    const sanitizedEmail = email.trim().toLowerCase();
 
-    const targetEmail = (email || defaultEmail).trim().toLowerCase();
-    const targetName = (username || defaultName).trim();
-
-    const accounts = getStoredAccounts();
-    let account = accounts.find(a => a.email === targetEmail);
-
-    if (!account) {
-      const res = await this.register(targetEmail, targetName, 'social-auth-password');
-      return res;
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/account`, {
+        method: 'DELETE',
+        headers: this.getHeaders()
+      });
+      if (response.ok) return;
+    } catch (netErr) {
+      console.log('Real backend server not reachable, purging local account record:', netErr);
     }
 
-    const token = 'token-social-' + account.user.id;
-    return { token, user: account.user, wallet: account.wallet };
+    const accounts = getStoredAccounts();
+    saveStoredAccounts(accounts.filter(a => a.email !== sanitizedEmail));
   }
 
   public static async getMe(): Promise<{ user: User; wallet: Wallet }> {

@@ -4,7 +4,8 @@ import { useStore } from '../../store/useStore';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
-import { ShoppingBag, Coins, Crown, Zap, ShieldCheck, RefreshCw, Sparkles, CheckCircle2, Star, Car, Home, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag, Coins, Crown, Zap, ShieldCheck, RefreshCw, Star, Car, Home, ArrowUpRight } from 'lucide-react';
+import { purchaseProductById } from '../../services/purchases';
 
 interface StoreProduct {
   id: string;
@@ -138,11 +139,11 @@ export const StorePanel: React.FC = () => {
   ];
 
   // IN-APP PURCHASE HANDLER
-  const handlePurchase = (product: StoreProduct) => {
+  const handlePurchase = async (product: StoreProduct) => {
     setPurchasingId(product.id);
 
-    setTimeout(() => {
-      setPurchasingId(null);
+    try {
+      await purchaseProductById(product.id);
 
       // Execute Reward logic based on product type
       if (product.rewardType === 'CASH_DEPOSIT' && wallet && product.rewardValue) {
@@ -207,9 +208,19 @@ export const StorePanel: React.FC = () => {
       addToast({
         type: 'success',
         title: 'Ödeme Başarılı! 🛍️',
-        message: `${product.name} OK`
+        message: `${product.name} satın alma işlemi tamamlandı.`
       });
-    }, 1200);
+    } catch (err: any) {
+      if (!err?.userCancelled) {
+        addToast({
+          type: 'error',
+          title: 'Satın Alma Başarısız',
+          message: err?.message || 'Satın alma işlemi tamamlanamadı.'
+        });
+      }
+    } finally {
+      setPurchasingId(null);
+    }
   };
 
   const filteredProducts = products.filter(p => activeCategory === 'ALL' || p.category === activeCategory);

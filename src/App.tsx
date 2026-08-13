@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useStore } from './store/useStore';
 import { ApiService } from './services/api';
+import { initPurchases } from './services/purchases';
 import { Header } from './components/molecules/Header';
 import { Navigation } from './components/molecules/Navigation';
 import { BottomNav } from './components/molecules/BottomNav';
@@ -27,6 +28,7 @@ export const App: React.FC = () => {
   const {
     activeTab,
     token,
+    user,
     setUser,
     setWallet,
     setToken,
@@ -77,6 +79,12 @@ export const App: React.FC = () => {
 
     initAppBackendData();
   }, [setUser, setWallet, setToken, setProperties, setVehicles, setJobs, setAssets, setPortfolio, setIsLoading]);
+
+  useEffect(() => {
+    if (user?.id) {
+      initPurchases(user.id).catch((err) => console.warn('Purchases init skipped:', err.message));
+    }
+  }, [user?.id]);
 
   // LIVE EVENT REAL-TIME PUSH NOTIFICATIONS SYSTEM (DYNAMIC I18N)
   useEffect(() => {

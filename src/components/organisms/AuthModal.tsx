@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../store/useStore';
 import { ApiService } from '../../services/api';
 import { Button } from '../atoms/Button';
-import { X, Lock, Mail, User as UserIcon, Sparkles, Loader2, ShieldCheck } from 'lucide-react';
+import { X, Lock, Mail, User as UserIcon, Sparkles, Loader2 } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, setIsAuthModalOpen, setUser, setWallet, setToken, addToast } = useStore();
@@ -13,38 +13,8 @@ export const AuthModal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showAppleNamePrompt, setShowAppleNamePrompt] = useState(false);
-  const [appleNameInput, setAppleNameInput] = useState('');
 
   if (!isAuthModalOpen) return null;
-
-  const handleSocialSignIn = async (provider: 'APPLE' | 'GOOGLE') => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      // If user typed email or username in inputs, use their exact real details
-      const targetEmail = email.trim() || (provider === 'APPLE' ? 'apple.id@icloud.com' : 'google.account@gmail.com');
-      const targetName = username.trim() || appleNameInput.trim() || (provider === 'APPLE' ? 'Apple Kullanıcısı' : 'Google Kullanıcısı');
-
-      const res = await ApiService.socialAuth(provider, targetEmail, targetName);
-      setUser(res.user);
-      setWallet(res.wallet);
-      setToken(res.token);
-      setIsAuthModalOpen(false);
-
-      const titleMap = { APPLE: ' Apple ID Girişi', GOOGLE: '🌐 Google Account Girişi' };
-      addToast({
-        type: 'success',
-        title: `${titleMap[provider]} Başarılı 🟢`,
-        message: `Hoş geldiniz ${res.user.username}! Oturumunuz gerçek hesabınızla açıldı.`
-      });
-    } catch (err: any) {
-      setError(err.message || 'Giriş yapılamadı.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +98,7 @@ export const AuthModal: React.FC = () => {
               {isRegister ? 'Gerçek Oyuncu Kaydı' : 'Gerçek Hesap Girişi'}
             </h2>
             <p className="text-[11px] sm:text-xs font-semibold text-slate-400 mt-0.5">
-              Apple ID, Google veya Gmail hesabınızla oturum açın.
+              E-posta adresinizle gerçek hesabınızı oluşturun veya giriş yapın.
             </p>
           </div>
 
@@ -138,37 +108,7 @@ export const AuthModal: React.FC = () => {
             </div>
           )}
 
-          {/* REAL NATIVE SOCIAL SIGN IN BUTTONS */}
-          <div className="space-y-2 mb-4 text-left">
-            <Button
-              variant="secondary"
-              disabled={loading}
-              className="w-full py-3 text-xs font-black bg-white text-slate-950 hover:bg-slate-100 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-              onClick={() => handleSocialSignIn('APPLE')}
-            >
-              <span className="text-base leading-none"></span> Apple ID ile Giriş Yap
-            </Button>
-
-            <Button
-              variant="outline"
-              disabled={loading}
-              className="w-full py-3 text-xs font-black bg-slate-950 border border-slate-700 text-white hover:bg-slate-800 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-              onClick={() => handleSocialSignIn('GOOGLE')}
-            >
-              <span className="text-base font-black text-rose-400">G</span> Google / Gmail ile Giriş Yap
-            </Button>
-          </div>
-
-          {/* DIVIDER */}
-          <div className="relative flex py-2 items-center mb-3">
-            <div className="flex-grow border-t border-slate-800"></div>
-            <span className="flex-shrink mx-2 text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-wider">
-              VEYA E-POSTA İLE HESAP OLUŞTUR / GİRİŞ YAP
-            </span>
-            <div className="flex-grow border-t border-slate-800"></div>
-          </div>
-
-          {/* REAL GMAIL & PASSWORD FORM */}
+          {/* REAL EMAIL & PASSWORD FORM */}
           <form onSubmit={handleFormSubmit} className="space-y-3 text-left">
             <div>
               <label className="text-xs font-bold text-slate-300 block mb-1">E-posta Adresiniz</label>

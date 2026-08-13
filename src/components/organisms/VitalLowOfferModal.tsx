@@ -3,7 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../store/useStore';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
-import { Zap, Heart, Smile, X, Sparkles, ShoppingBag, AlertTriangle, Stethoscope, DollarSign, ShieldAlert, Palmtree, Coffee, Percent } from 'lucide-react';
+import { Zap, Heart, Smile, X, ShoppingBag, AlertTriangle, Stethoscope, ShieldAlert, Palmtree, Coffee } from 'lucide-react';
+import { purchaseProductById } from '../../services/purchases';
+
+const ELIXIR_PRODUCT_ID = 'vl_boost_elixir';
 
 export const VitalLowOfferModal: React.FC = () => {
   const { user, setUser, wallet, setWallet, setActiveTab, addToast, t } = useStore();
@@ -77,11 +80,11 @@ export const VitalLowOfferModal: React.FC = () => {
   };
 
   // UNIVERSAL IN-APP PURCHASE SOLUTION ($1.99 Elixir Refills ALL 3 Vitals to 100%)
-  const handleInstantBuyElixir = () => {
+  const handleInstantBuyElixir = async () => {
     setPurchasing(true);
-    setTimeout(() => {
-      setPurchasing(false);
-      
+    try {
+      await purchaseProductById(ELIXIR_PRODUCT_ID);
+
       useStore.getState().refillVitalsWithImmunity(10);
 
       addToast({
@@ -91,7 +94,17 @@ export const VitalLowOfferModal: React.FC = () => {
       });
 
       handleDismiss();
-    }, 800);
+    } catch (err: any) {
+      if (!err?.userCancelled) {
+        addToast({
+          type: 'error',
+          title: 'Satın Alma Başarısız',
+          message: err?.message || 'Satın alma işlemi tamamlanamadı.'
+        });
+      }
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   if (!isOpen) return null;
