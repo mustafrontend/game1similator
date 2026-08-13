@@ -1,4 +1,4 @@
-export type EducationLevel = 'HIGH_SCHOOL' | 'BACHELOR' | 'MASTER';
+export type EducationLevel = 'HIGH_SCHOOL' | 'BACHELOR' | 'MASTER' | 'DOCTORATE';
 export type UserStatus = 'OFFLINE' | 'ONLINE' | 'ON_SHIFT';
 
 export interface User {

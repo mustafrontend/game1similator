@@ -128,6 +128,81 @@ export const DEFAULT_INVESTMENT_ASSETS: Asset[] = [
   { id: 'ast-10', symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'STOCK', current_price: 7800.00, prev_price: 7750.00, change_24h: 0.64 }
 ];
 
+export const DEFAULT_JOB_LISTINGS: Job[] = [
+  {
+    id: 'job-1',
+    title: 'Servis Elemanı / Barista',
+    company_name: 'Nusr-Et Steakhouse',
+    salary_per_tick: 8500,
+    exp_per_tick: 15,
+    required_education: 'HIGH_SCHOOL',
+    required_reputation: 10,
+    min_health_req: 20,
+    min_happiness_req: 20,
+    is_eligible: true
+  },
+  {
+    id: 'job-2',
+    title: 'Junior Yazılım Geliştirici',
+    company_name: 'Trendyol Tech Hub',
+    salary_per_tick: 48000,
+    exp_per_tick: 45,
+    required_education: 'BACHELOR',
+    required_reputation: 150,
+    min_health_req: 30,
+    min_happiness_req: 30,
+    is_eligible: true
+  },
+  {
+    id: 'job-3',
+    title: 'Kıdemli Borsa & Portföy Analisti',
+    company_name: 'Garanti Yatırım A.Ş.',
+    salary_per_tick: 75000,
+    exp_per_tick: 70,
+    required_education: 'BACHELOR',
+    required_reputation: 350,
+    min_health_req: 40,
+    min_happiness_req: 40,
+    is_eligible: true
+  },
+  {
+    id: 'job-4',
+    title: 'Lüks Gayrimenkul Portföy Danışmanı',
+    company_name: 'Sotheby’s International Realty',
+    salary_per_tick: 95000,
+    exp_per_tick: 90,
+    required_education: 'BACHELOR',
+    required_reputation: 500,
+    min_health_req: 50,
+    min_happiness_req: 50,
+    is_eligible: true
+  },
+  {
+    id: 'job-5',
+    title: 'Kripto & Algoritmik Ticaret Yöneticisi',
+    company_name: 'Binance TR Institutional',
+    salary_per_tick: 140000,
+    exp_per_tick: 120,
+    required_education: 'MASTER',
+    required_reputation: 750,
+    min_health_req: 50,
+    min_happiness_req: 50,
+    is_eligible: true
+  },
+  {
+    id: 'job-6',
+    title: 'Yönetim Kurulu Başkanı / CEO',
+    company_name: 'Büyükdere Holding A.Ş.',
+    salary_per_tick: 320000,
+    exp_per_tick: 250,
+    required_education: 'DOCTORATE',
+    required_reputation: 1200,
+    min_health_req: 60,
+    min_happiness_req: 60,
+    is_eligible: true
+  }
+];
+
 const savedLang = (localStorage.getItem('virtual_life_language') as LanguageCode) || 'tr';
 const initialLanguageModalState = !localStorage.getItem('virtual_life_language');
 
@@ -143,6 +218,9 @@ const savedWallet = safeParseStorage<Wallet | null>('vl_wallet', null);
 
 const initialAssets = safeParseStorage<Asset[]>('vl_assets', DEFAULT_INVESTMENT_ASSETS);
 const finalAssets = initialAssets.length > 0 ? initialAssets : DEFAULT_INVESTMENT_ASSETS;
+
+const initialJobs = safeParseStorage<Job[]>('vl_jobs', DEFAULT_JOB_LISTINGS);
+const finalJobs = initialJobs.length > 0 ? initialJobs : DEFAULT_JOB_LISTINGS;
 
 export const useStore = create<AppState>((set, get) => ({
   user: savedUser,
@@ -166,7 +244,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   properties: safeParseStorage<Property[]>('vl_properties', []),
   vehicles: safeParseStorage<Vehicle[]>('vl_vehicles', []),
-  jobs: [],
+  jobs: finalJobs,
   assets: finalAssets,
   portfolio: safeParseStorage<UserPortfolio[]>('vl_portfolio', []),
   socialLoans: safeParseStorage<{ lent: SocialLoan[]; borrowed: SocialLoan[] }>('vl_loans', { lent: [], borrowed: [] }),
@@ -269,7 +347,10 @@ export const useStore = create<AppState>((set, get) => ({
     localStorage.setItem('vl_vehicles', JSON.stringify(vehicles));
     set({ vehicles });
   },
-  setJobs: (jobs) => set({ jobs }),
+  setJobs: (jobs) => {
+    localStorage.setItem('vl_jobs', JSON.stringify(jobs));
+    set({ jobs });
+  },
   setAssets: (assets) => {
     localStorage.setItem('vl_assets', JSON.stringify(assets));
     set({ assets });
