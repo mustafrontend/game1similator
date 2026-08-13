@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStore, GUEST_OWNER_ID } from './store/useStore';
+import { useStore, GUEST_OWNER_ID, generateAiRealEstateProperty } from './store/useStore';
 import { ApiService } from './services/api';
 import { NotificationService } from './services/notificationService';
 import { Header } from './components/molecules/Header';
@@ -112,11 +112,33 @@ export const App: React.FC = () => {
         message: `Arka planda +${state.formatCurrency(offlineRentCollected)} kira toplandı ve banka taksitleriniz işlendi.`
       });
 
-      // Phone / Browser Native Push Notification
       NotificationService.sendPush(
         "Virtual Life: Arka Plan Güncellemesi 📱",
         `Siz oyunda yokken ${elapsedMonths} Oyun Ayı geçti. +${state.formatCurrency(offlineRentCollected)} kira toplandı ve taksitleriniz işlendi.`
       );
+
+      // 3. Process AI Real Estate Property Generator (Every 4 Hours)
+      const lastAiSpawn = parseInt(localStorage.getItem('vl_last_ai_prop_spawn') || Date.now().toString(), 10);
+      const elapsedAiMs = now - lastAiSpawn;
+      const elapsed4HourCycles = Math.floor(elapsedAiMs / (4 * 60 * 60 * 1000));
+
+      if (elapsed4HourCycles > 0) {
+        localStorage.setItem('vl_last_ai_prop_spawn', now.toString());
+        const newAiProps = Array.from({ length: Math.min(elapsed4HourCycles, 6) }).map(() => generateAiRealEstateProperty());
+
+        state.setProperties([...newAiProps, ...state.properties]);
+
+        state.addToast({
+          type: 'info',
+          title: 'AI Müteahhit Projeleri 🏗️',
+          message: `Siz yokken AI Emlak Geliştirici haritaya ${newAiProps.length} yeni lüks mülk (Boğaz yalısı/rezidans) inşa etti!`
+        });
+
+        NotificationService.sendPush(
+          "AI Emlak Geliştirici 🏠",
+          `İstanbul haritasına ${newAiProps.length} yeni lüks konut projesi eklendi! Satılık ve kiralık ilanları inceleyin.`
+        );
+      }
     }
 
     // Save timestamp heartbeat every 30 seconds
@@ -298,6 +320,25 @@ export const App: React.FC = () => {
       }
     }, 35000);
 
+    // 7. 4-HOUR AI REAL ESTATE PROPERTY SPAWNER (Generates 1 new AI property every 4 hours)
+    const aiPropInterval = setInterval(() => {
+      const state = useStore.getState();
+      const newAiProp = generateAiRealEstateProperty();
+      state.setProperties([newAiProp, ...state.properties]);
+      localStorage.setItem('vl_last_ai_prop_spawn', Date.now().toString());
+
+      state.addToast({
+        type: 'info',
+        title: 'AI Müteahhit Projesi İnşa Edildi 🏗️',
+        message: `"${newAiProp.title}" haritada yeni ${newAiProp.is_for_sale ? 'Satılık' : 'Kiralık'} ilanı olarak yerini aldı!`
+      });
+
+      NotificationService.sendPush(
+        "AI Müteahhit Yeni Proje 🏠",
+        `"${newAiProp.title}" (${state.formatCurrency(newAiProp.price)}) haritada satışa/kiraya çıkarıldı!`
+      );
+    }, 4 * 60 * 60 * 1000);
+
     return () => {
       clearInterval(rentInterval);
       clearInterval(marketInterval);
@@ -306,6 +347,7 @@ export const App: React.FC = () => {
       clearInterval(loanInstallmentInterval);
       clearInterval(loanInterval);
       clearInterval(offerInterval);
+      clearInterval(aiPropInterval);
     };
   }, [isLoading]);
 

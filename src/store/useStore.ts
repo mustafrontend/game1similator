@@ -27,6 +27,51 @@ export const freshUndergroundAuction = (): UndergroundAuctionState => ({
   resolved: false
 });
 
+export const AI_DISTRICTS = [
+  { name: 'Bebek Boğaz Hattı', lat: 41.076, lng: 29.043, multiplier: 2.5 },
+  { name: 'Beykoz Konakları', lat: 41.132, lng: 29.098, multiplier: 2.2 },
+  { name: 'Nişantaşı Abdi İpekçi', lat: 41.050, lng: 28.992, multiplier: 2.0 },
+  { name: 'Levent Plaza Kuleleri', lat: 41.078, lng: 29.011, multiplier: 1.8 },
+  { name: 'Etiler Lüks Konutlar', lat: 41.082, lng: 29.028, multiplier: 1.9 },
+  { name: 'Kadıköy Moda Sahil', lat: 40.984, lng: 29.026, multiplier: 1.5 },
+  { name: 'Ataşehir Finans Merkezi', lat: 40.993, lng: 29.117, multiplier: 1.4 },
+  { name: 'Sarıyer Tarabya Boğaz', lat: 41.140, lng: 29.055, multiplier: 2.3 },
+  { name: 'Beşiktaş Çarşı Rezidans', lat: 41.042, lng: 29.006, multiplier: 1.6 },
+  { name: 'Üsküdar Çamlıca Villa', lat: 41.026, lng: 29.063, multiplier: 1.7 }
+];
+
+export const AI_PROP_TYPES: Array<'Daire' | 'Villa' | 'Rezidans' | 'Yalı' | 'Penthouse'> = [
+  'Daire', 'Villa', 'Rezidans', 'Yalı', 'Penthouse'
+];
+
+export function generateAiRealEstateProperty(): Property {
+  const district = AI_DISTRICTS[Math.floor(Math.random() * AI_DISTRICTS.length)];
+  const propType = AI_PROP_TYPES[Math.floor(Math.random() * AI_PROP_TYPES.length)];
+  
+  const basePrice = (15000000 + Math.floor(Math.random() * 45000000)) * district.multiplier;
+  const price = Math.round(basePrice / 100000) * 100000;
+  const isSale = Math.random() > 0.3; // 70% sale, 30% rent
+  
+  const jitterLat = (Math.random() - 0.5) * 0.015;
+  const jitterLng = (Math.random() - 0.5) * 0.015;
+
+  return {
+    id: 'prop-ai-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+    title: `${district.name} ${propType}`,
+    property_type: 'RESIDENTIAL',
+    latitude: district.lat + jitterLat,
+    longitude: district.lng + jitterLng,
+    address_name: district.name,
+    price: price,
+    rental_yield_per_tick: Math.round(price * 0.0003),
+    maintenance_condition: 100,
+    owner_id: 'AI_MUTEAHHIT',
+    is_for_sale: isSale,
+    is_for_rent: !isSale,
+    rental_price: Math.round(price * 0.005)
+  };
+}
+
 export interface ToastNotification {
   id: string;
   type: 'success' | 'error' | 'info' | 'warning';
