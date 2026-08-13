@@ -188,3 +188,17 @@ export interface ChatMessage {
   content: string;
   created_at: string;
 }
+
+export interface BankLoanRecord {
+  id: string;
+  user_id: string;
+  loan_title: string;
+  principal_amount: number;
+  monthly_payment: number;
+  total_repayment: number;
+  total_months: number;
+  remaining_months: number;
+  paid_months: number;
+  interest_rate: number;
+  created_at: string;
+}

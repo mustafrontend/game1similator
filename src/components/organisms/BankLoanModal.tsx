@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, GUEST_OWNER_ID } from '../../store/useStore';
-import { ExpenseItem } from '../../types';
+import { ExpenseItem, BankLoanRecord } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { X, Landmark, DollarSign, Calculator, Calendar, CheckCircle2, ShieldCheck, Sparkles, AlertCircle, Percent } from 'lucide-react';
@@ -57,6 +57,9 @@ export const BankLoanModal: React.FC<Props> = ({ onClose }) => {
 
     if (!wallet) return;
 
+    const myId = user?.id || GUEST_OWNER_ID;
+    const loanTitle = loanType === 'CONSUMER' ? 'Banka İhtiyaç Kredisi' : loanType === 'MORTGAGE' ? 'Konut Kredisi' : 'Taşıt Kredisi';
+
     // 1. Deposit loan principal into bank balance
     setWallet({
       ...wallet,
@@ -64,12 +67,29 @@ export const BankLoanModal: React.FC<Props> = ({ onClose }) => {
       total_liquid: wallet.total_liquid + amountNum
     });
 
-    // 2. Add dynamic expense item to Upcoming Expenses Calendar
-    const loanTitle = loanType === 'CONSUMER' ? 'Banka İhtiyaç Kredisi Taksiti' : loanType === 'MORTGAGE' ? 'Konut Kredisi Taksiti' : 'Taşıt Kredisi Taksiti';
+    // 2. Add BankLoanRecord with full multi-installment schedule
+    const newLoanRecord: BankLoanRecord = {
+      id: 'loan-rec-' + Date.now(),
+      user_id: myId,
+      loan_title: loanTitle,
+      principal_amount: amountNum,
+      monthly_payment: Math.round(monthlyPayment),
+      total_repayment: Math.round(totalRepayment),
+      total_months: months,
+      remaining_months: months,
+      paid_months: 0,
+      interest_rate: monthlyRate,
+      created_at: new Date().toLocaleDateString('tr-TR')
+    };
+
+    const currentLoans = useStore.getState().activeBankLoans;
+    useStore.getState().setActiveBankLoans([newLoanRecord, ...currentLoans]);
+
+    // 3. Add dynamic expense item for the first installment (Taksit 1/N)
     const newExpense: ExpenseItem = {
       id: 'exp-loan-' + Date.now(),
-      user_id: user?.id || GUEST_OWNER_ID,
-      title: loanTitle,
+      user_id: myId,
+      title: `${loanTitle} (Taksit 1/${months})`,
       category: 'Kredi',
       amount: Math.round(monthlyPayment),
       due_date: '28 Ağustos',
@@ -79,10 +99,25 @@ export const BankLoanModal: React.FC<Props> = ({ onClose }) => {
 
     setExpenses([newExpense, ...expenses]);
 
+    // 4. Reduce Findeks Credit Score due to new debt leverage!
+    if (user) {
+      const oldScore = user.credit_score;
+      const newScore = Math.max(300, oldScore - 75);
+      useStore.getState().setUser({
+        ...user,
+        credit_score: newScore
+      });
+      addToast({
+        type: 'warning',
+        title: 'Findeks Skor Bildirimi 📉',
+        message: `Yeni kredi kullanımı nedeniyle Findeks skorunuz ${oldScore} → ${newScore} puana düştü. (Taksitleri düzenli ödedikçe skorunuz yükselecektir).`
+      });
+    }
+
     addToast({
       type: 'success',
-      title: 'Banka Kredisi Onaylandı & Takvime Eklendi! 🏦',
-      message: `${formatCurrency(amountNum)} hesabınıza yatırıldı. Aylık taksit (${formatCurrency(monthlyPayment)}) Gelecek Ödemeler Takvimi'ne eklendi.`
+      title: `Banka Kredisi (${months} Ay Vade) Onaylandı! 🏦`,
+      message: `${formatCurrency(amountNum)} hesabınıza yatırıldı. ${months} aylık taksit planı Finans Paneli'ne eklendi.`
     });
 
     onClose();

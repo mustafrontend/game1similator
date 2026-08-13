@@ -10,13 +10,14 @@ import { Wallet, TrendingUp, Calendar, ShieldCheck, ArrowUpRight, ArrowDownLeft,
 import { motion } from 'framer-motion';
 
 export const FinancialDashboard: React.FC = () => {
-  const { wallet, setWallet, socialLoans, transactions, expenses, setExpenses, user, setUser, setActiveTab, addToast, t, formatCurrency } = useStore();
+  const { wallet, setWallet, socialLoans, transactions, expenses, setExpenses, activeBankLoans, payBankLoanInstallment, payOffBankLoan, user, setUser, setActiveTab, addToast, t, formatCurrency } = useStore();
   const [borrowerName, setBorrowerName] = useState('');
   const [loanAmount, setLoanAmount] = useState('');
   const [isLendModalOpen, setIsLendModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [isBankLoanModalOpen, setIsBankLoanModalOpen] = useState(false);
   const [payingCash, setPayingCash] = useState(false);
+  const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
 
   const creditScore = user?.credit_score || 1000;
   const reputation = user?.reputation || 0;
@@ -373,7 +374,152 @@ export const FinancialDashboard: React.FC = () => {
           </div>
         </Card>
 
-        {/* CARD 4 (RIGHT 1/2): DYNAMIC UPCOMING EXPENSES CALENDAR FROM SQLITE DB */}
+        {/* CARD 4: ACTIVE BANK LOANS & FUTURE INSTALLMENTS AMORTIZATION SCHEDULE */}
+        {activeBankLoans.length > 0 && (
+          <Card className="border-l-4 border-l-purple-500 border-slate-800 bg-slate-900/90 shadow-2xl col-span-1 md:col-span-2">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-800/80 pb-3">
+              <div>
+                <h3 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                  <Landmark className="w-5 h-5 text-purple-400" /> Aktif Banka Kredileri & Gelecek Vade Ödeme Planı ({activeBankLoans.length})
+                </h3>
+                <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                  Taksit ödemelerini yaptıkça Findeks skorunuz yükselir (+50 Puan). Erken kapamalarda %10 faiz indirimi uygulanır.
+                </p>
+              </div>
+              <Badge variant="purple" className="py-1 px-3">
+                AKDİ FAİZLİ VADELİ KREDİLER
+              </Badge>
+            </div>
+
+            <div className="space-y-4">
+              {activeBankLoans.map((loan) => {
+                const isExpanded = expandedLoanId === loan.id;
+                const progressPercentage = Math.round((loan.paid_months / loan.total_months) * 100);
+
+                return (
+                  <div key={loan.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base font-black text-white">{loan.loan_title}</h4>
+                          <Badge variant="gold">{loan.total_months} Ay Vade</Badge>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-400 mt-1">
+                          Ana Para: {formatCurrency(loan.principal_amount)} • Toplam Geri Ödeme: {formatCurrency(loan.total_repayment)}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold text-slate-400 block">Aylık Taksit Tutarınız</span>
+                        <strong className="text-lg font-black text-amber-400">{formatCurrency(loan.monthly_payment)} / ay</strong>
+                      </div>
+                    </div>
+
+                    {/* INSTALLMENT PROGRESS BAR */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs font-extrabold text-slate-300">
+                        <span>Taksit İlerlemesi: {loan.paid_months} / {loan.total_months} Ay Ödendi</span>
+                        <span className="text-emerald-400">Kalan: {loan.remaining_months} Taksit</span>
+                      </div>
+                      <div className="h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-emerald-400 rounded-full transition-all duration-500"
+                          style={{ width: `${progressPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* ACTION BUTTONS */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-900">
+                      <button
+                        onClick={() => setExpandedLoanId(isExpanded ? null : loan.id)}
+                        className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        {isExpanded ? 'Gelecek Taksit Takvimini Gizle ▲' : 'Gelecek Vadeli Taksit Takvimini Göster (24 Ay) ▼'}
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="gold"
+                          size="sm"
+                          className="text-[11px] font-black"
+                          onClick={() => payBankLoanInstallment(loan.id)}
+                        >
+                          <Check className="w-3.5 h-3.5 mr-1" /> Önümüzdeki Taksiti Öde ({formatCurrency(loan.monthly_payment)})
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-[11px] font-black border-emerald-500/60 text-emerald-300 hover:bg-emerald-600 hover:text-white"
+                          onClick={() => payOffBankLoan(loan.id)}
+                        >
+                          <Crown className="w-3.5 h-3.5 mr-1 text-amber-400" /> Krediyi Erken Kapat (%10 İndirimli)
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* EXPANDABLE MULTI-INSTALLMENT SCHEDULE TABLE */}
+                    {isExpanded && (
+                      <div className="pt-3 border-t border-slate-800 space-y-2">
+                        <h5 className="text-xs font-black text-amber-300 flex items-center gap-1.5 mb-2">
+                          <Calendar className="w-4 h-4" /> Gelecek Vadelere Ait Tüm Taksit Takvimi ({loan.total_months} Ay):
+                        </h5>
+                        
+                        <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                          {Array.from({ length: loan.total_months }).map((_, idx) => {
+                            const installmentNo = idx + 1;
+                            const isPaid = installmentNo <= loan.paid_months;
+                            const isCurrentDue = installmentNo === loan.paid_months + 1;
+
+                            // Calculate month label
+                            const d = new Date();
+                            d.setMonth(d.getMonth() + idx);
+                            const monthStr = d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
+                            return (
+                              <div
+                                key={idx}
+                                className={`p-2.5 rounded-xl border flex justify-between items-center text-xs font-semibold ${
+                                  isPaid
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                                    : isCurrentDue
+                                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
+                                    : 'bg-slate-900/80 border-slate-800 text-slate-400'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
+                                    Taksit #{installmentNo} / {loan.total_months}
+                                  </span>
+                                  <span>Vade: {monthStr}</span>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <span className="font-bold">{formatCurrency(loan.monthly_payment)}</span>
+                                  {isPaid ? (
+                                    <Badge variant="emerald">✓ ÖDENDİ</Badge>
+                                  ) : isCurrentDue ? (
+                                    <Badge variant="gold">⏳ AKTİF ÖDENECEK VADE</Badge>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-slate-500">📅 GELECEK VADE</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* CARD 5 (RIGHT 1/2): DYNAMIC UPCOMING EXPENSES CALENDAR FROM SQLITE DB */}
         <Card className="border-l-4 border-l-rose-500 border-slate-800 bg-slate-900/90 shadow-2xl">
           <div className="flex items-center gap-2 mb-3 border-b border-slate-800/80 pb-3">
             <Calendar className="w-5 h-5 text-rose-400" />

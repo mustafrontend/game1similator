@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, Wallet, Property, Vehicle, Job, Asset, SocialLoan, Transaction, UserPortfolio, MarketOffer, ExpenseItem } from '../types';
+import { User, Wallet, Property, Vehicle, Job, Asset, SocialLoan, Transaction, UserPortfolio, MarketOffer, ExpenseItem, BankLoanRecord } from '../types';
 import { LanguageCode, getTranslation } from '../i18n/translations';
 import { formatCurrencyByLanguage } from '../i18n/currency';
 import { AIService } from '../services/aiService';
@@ -71,6 +71,7 @@ interface AppState {
   offers: MarketOffer[];
   offshoreBalance: number;
   undergroundAuction: UndergroundAuctionState;
+  activeBankLoans: BankLoanRecord[];
   
   setUser: (user: User | null) => void;
   setWallet: (wallet: Wallet | null) => void;
@@ -93,6 +94,9 @@ interface AppState {
   setOffers: (offers: MarketOffer[]) => void;
   setOffshoreBalance: (amount: number) => void;
   setUndergroundAuction: (auction: UndergroundAuctionState) => void;
+  setActiveBankLoans: (loans: BankLoanRecord[]) => void;
+  payBankLoanInstallment: (loanId: string) => void;
+  payOffBankLoan: (loanId: string) => void;
   resolveUndergroundAuctionIfDue: () => void;
   
   acceptOffer: (offerId: string) => void;
@@ -251,6 +255,7 @@ export const useStore = create<AppState>((set, get) => ({
   transactions: safeParseStorage<Transaction[]>('vl_transactions', []),
   expenses: safeParseStorage<ExpenseItem[]>('vl_expenses', []),
   offers: [],
+  activeBankLoans: safeParseStorage<BankLoanRecord[]>('vl_bank_loans', []),
   undergroundAuction: (() => {
     const saved = safeParseStorage<UndergroundAuctionState | null>('vl_underground_auction', null);
     if (saved && !saved.resolved && saved.endsAt > Date.now()) return saved;
@@ -380,6 +385,105 @@ export const useStore = create<AppState>((set, get) => ({
   setUndergroundAuction: (undergroundAuction) => {
     localStorage.setItem('vl_underground_auction', JSON.stringify(undergroundAuction));
     set({ undergroundAuction });
+  },
+
+  setActiveBankLoans: (activeBankLoans) => {
+    localStorage.setItem('vl_bank_loans', JSON.stringify(activeBankLoans));
+    set({ activeBankLoans });
+  },
+
+  payBankLoanInstallment: (loanId) => {
+    const state = get();
+    const loan = state.activeBankLoans.find(l => l.id === loanId);
+    if (!loan || !state.wallet) return;
+
+    if (state.wallet.total_liquid < loan.monthly_payment) {
+      state.addToast({
+        type: 'error',
+        title: 'Yetersiz Bakiye',
+        message: `Taksit tutarı (${formatCurrencyByLanguage(loan.monthly_payment, state.language)}) için bakiyeniz yetersizdir.`
+      });
+      return;
+    }
+
+    const updatedBank = state.wallet.bank_balance >= loan.monthly_payment ? state.wallet.bank_balance - loan.monthly_payment : 0;
+    const remainingCash = state.wallet.bank_balance >= loan.monthly_payment ? state.wallet.cash_balance : state.wallet.cash_balance - (loan.monthly_payment - state.wallet.bank_balance);
+
+    state.setWallet({
+      ...state.wallet,
+      bank_balance: updatedBank,
+      cash_balance: remainingCash,
+      total_liquid: updatedBank + remainingCash
+    });
+
+    const newPaid = loan.paid_months + 1;
+    const newRemaining = loan.remaining_months - 1;
+
+    let updatedLoans: BankLoanRecord[];
+    if (newRemaining <= 0) {
+      updatedLoans = state.activeBankLoans.filter(l => l.id !== loanId);
+      if (state.user) {
+        state.setUser({
+          ...state.user,
+          credit_score: Math.min(1900, state.user.credit_score + 50)
+        });
+      }
+      state.addToast({
+        type: 'success',
+        title: '🎉 Kredi Tamamen Kapandı!',
+        message: `"${loan.loan_title}" borcunuzun tüm taksitleri bitti. +50 Findeks Skor bonusu kazandınız!`
+      });
+    } else {
+      updatedLoans = state.activeBankLoans.map(l => l.id === loanId ? { ...l, paid_months: newPaid, remaining_months: newRemaining } : l);
+      state.addToast({
+        type: 'success',
+        title: 'Taksit Ödendi 💳',
+        message: `"${loan.loan_title}" Taksit ${newPaid}/${loan.total_months} ödendi. Kalan: ${newRemaining} Taksit.`
+      });
+    }
+    state.setActiveBankLoans(updatedLoans);
+  },
+
+  payOffBankLoan: (loanId) => {
+    const state = get();
+    const loan = state.activeBankLoans.find(l => l.id === loanId);
+    if (!loan || !state.wallet) return;
+
+    const discountRepayment = Math.round(loan.remaining_months * loan.monthly_payment * 0.90);
+    if (state.wallet.total_liquid < discountRepayment) {
+      state.addToast({
+        type: 'error',
+        title: 'Yetersiz Bakiye',
+        message: `Erken kapatma tutarı (${formatCurrencyByLanguage(discountRepayment, state.language)}) için bakiye yetersizdir.`
+      });
+      return;
+    }
+
+    const updatedBank = state.wallet.bank_balance >= discountRepayment ? state.wallet.bank_balance - discountRepayment : 0;
+    const remainingCash = state.wallet.bank_balance >= discountRepayment ? state.wallet.cash_balance : state.wallet.cash_balance - (discountRepayment - state.wallet.bank_balance);
+
+    state.setWallet({
+      ...state.wallet,
+      bank_balance: updatedBank,
+      cash_balance: remainingCash,
+      total_liquid: updatedBank + remainingCash
+    });
+
+    const updatedLoans = state.activeBankLoans.filter(l => l.id !== loanId);
+    state.setActiveBankLoans(updatedLoans);
+
+    if (state.user) {
+      state.setUser({
+        ...state.user,
+        credit_score: Math.min(1900, state.user.credit_score + 75)
+      });
+    }
+
+    state.addToast({
+      type: 'success',
+      title: '👑 Kredi Erken Kapatıldı (%10 İndirimli)!',
+      message: `"${loan.loan_title}" kredisinin kalan ${loan.remaining_months} taksiti %10 faiz indirimiyle tek seferde kapatıldı. +75 Findeks Skoru kazandınız!`
+    });
   },
 
   resolveUndergroundAuctionIfDue: () => {
