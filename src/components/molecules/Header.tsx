@@ -131,10 +131,9 @@ export const Header: React.FC = () => {
             {/* Language Flag Button */}
             <button
               onClick={() => setIsLanguageModalOpen(true)}
-              className="px-1.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] font-black text-slate-200 cursor-pointer flex items-center gap-0.5"
+              className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-black text-amber-400 cursor-pointer flex items-center gap-1"
             >
-              <span>{currentLanguageObj.flag}</span>
-              <span className="uppercase text-[9px]">{currentLanguageObj.code}</span>
+              <span className="uppercase text-[10px] tracking-wide font-black">{currentLanguageObj.code}</span>
             </button>
 
             {/* Money & Profile Button */}

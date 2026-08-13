@@ -336,18 +336,18 @@ export const App: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'dashboard', label: t('nav_finances'), icon: LayoutDashboard },
-    { id: 'map', label: t('nav_map'), icon: Compass },
-    { id: 'vehicles', label: t('nav_vehicles'), icon: Car },
-    { id: 'garage', label: t('nav_garage'), icon: Warehouse },
-    { id: 'career', label: t('nav_career'), icon: Briefcase },
-    { id: 'investment', label: t('nav_investments'), icon: LineChart },
-    { id: 'social', label: t('nav_social'), icon: Users },
-    { id: 'chat', label: t('nav_chat'), icon: MessageSquare },
-    { id: 'underground', label: t('nav_underground'), icon: Skull },
-    { id: 'leaderboard', label: t('nav_leaderboard'), icon: Trophy },
+    { id: 'dashboard', label: t('tab_dashboard') || 'Finans', icon: LayoutDashboard },
+    { id: 'map', label: t('tab_map') || 'Harita', icon: Compass },
+    { id: 'vehicles', label: t('tab_vehicles') || 'Araba', icon: Car },
+    { id: 'garage', label: t('tab_garage') || 'Garajım', icon: Warehouse },
+    { id: 'career', label: t('tab_career') || 'Kariyer', icon: Briefcase },
+    { id: 'investment', label: t('tab_investment') || 'Borsa', icon: LineChart },
+    { id: 'social', label: t('tab_social') || 'Sosyal', icon: Users },
+    { id: 'chat', label: t('tab_chat') || 'Sohbet', icon: MessageSquare },
+    { id: 'underground', label: t('tab_underground') || 'Yeraltı', icon: Skull },
+    { id: 'leaderboard', label: t('tab_leaderboard') || 'Liderlik', icon: Trophy },
     { id: 'store', label: 'Mağaza', icon: ShoppingBag },
-    { id: 'profile', label: t('nav_profile'), icon: User }
+    { id: 'profile', label: t('tab_profile') || 'Profil', icon: User }
   ];
 
   return (

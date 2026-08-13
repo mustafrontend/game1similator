@@ -99,7 +99,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     map_radar_title: 'Canlı Emlak Radar Haritası',
     map_pin_desc: 'Satılık (Altın Pin) ve Kiralık (Yeşil Pin) mülkler ayrılmıştır.',
     map_light_view: 'Light Harita Görünümü',
-    add_property_btn: '➕ Ev / Mülk Ekle',
+    add_property_btn: 'Ev / Mülk Ekle',
     fast_region: 'Hızlı Bölge:',
 
     // Vehicle Market
