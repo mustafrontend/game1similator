@@ -1,96 +1,149 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore, GUEST_OWNER_ID } from './store/useStore';
 import { ApiService } from './services/api';
-import { initPurchases } from './services/purchases';
+import { NotificationService } from './services/notificationService';
 import { Header } from './components/molecules/Header';
-import { Navigation } from './components/molecules/Navigation';
-import { BottomNav } from './components/molecules/BottomNav';
 import { FinancialDashboard } from './components/organisms/FinancialDashboard';
 import { RealEstateMap } from './components/organisms/RealEstateMap';
 import { VehicleMarketPanel } from './components/organisms/VehicleMarketPanel';
 import { MyGaragePanel } from './components/organisms/MyGaragePanel';
-import { LeaderboardPanel } from './components/organisms/LeaderboardPanel';
 import { UndergroundMarketPanel } from './components/organisms/UndergroundMarketPanel';
+import { LeaderboardPanel } from './components/organisms/LeaderboardPanel';
 import { CareerPanel } from './components/organisms/CareerPanel';
 import { LifeSocialPanel } from './components/organisms/LifeSocialPanel';
 import { InvestmentPanel } from './components/organisms/InvestmentPanel';
 import { GlobalChatPanel } from './components/organisms/GlobalChatPanel';
 import { UserProfilePanel } from './components/organisms/UserProfilePanel';
 import { StorePanel } from './components/organisms/StorePanel';
-import { VitalLowOfferModal } from './components/organisms/VitalLowOfferModal';
-import { LanguageSelectModal } from './components/organisms/LanguageSelectModal';
-import { NotificationPermissionModal } from './components/organisms/NotificationPermissionModal';
 import { AuthModal } from './components/organisms/AuthModal';
 import { ToastContainer } from './components/atoms/ToastContainer';
-import { Loader2, Sparkles } from 'lucide-react';
+import { VitalLowOfferModal } from './components/organisms/VitalLowOfferModal';
+import { NotificationPermissionModal } from './components/organisms/NotificationPermissionModal';
+import { LayoutDashboard, Compass, Car, Warehouse, Skull, Trophy, Briefcase, Users, LineChart, MessageSquare, User, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const ONE_GAME_MONTH_MS = 60 * 60 * 1000; // 60 Real Minutes = 1 In-Game Month
 
 export const App: React.FC = () => {
   const {
-    activeTab,
-    token,
     user,
     setUser,
+    wallet,
     setWallet,
     setToken,
-    setProperties,
-    setVehicles,
-    setJobs,
-    setAssets,
-    setPortfolio,
+    activeTab,
+    setActiveTab,
+    isAuthModalOpen,
     isLoading,
     setIsLoading,
     addToast,
-    t,
-    formatCurrency,
+    t
   } = useStore();
 
+  const [activeTabState, setActiveTabState] = useState(activeTab);
+
   useEffect(() => {
-    const initAppBackendData = async () => {
-      setIsLoading(true);
+    setActiveTabState(activeTab);
+  }, [activeTab]);
 
+  // Initial App Load & Offline Progress Simulation Engine
+  useEffect(() => {
+    const initializeAppData = async () => {
       try {
-        // Fetch ALL Live Database Records & Portfolio from Python Backend Server
-        const [meRes, propsRes, vehsRes, jobsRes, assetsRes, portfolioRes] = await Promise.all([
-          ApiService.getMe().catch(() => null),
-          ApiService.getMapProperties().catch(() => []),
-          ApiService.getVehicles().catch(() => []),
-          ApiService.getCareerOpportunities().catch(() => []),
-          ApiService.getInvestmentMarket().catch(() => []),
-          ApiService.getUserPortfolio().catch(() => [])
-        ]);
-
-        if (meRes) {
-          setUser(meRes.user);
-          setWallet(meRes.wallet);
+        const storedToken = localStorage.getItem('virtual_life_token');
+        if (storedToken) {
+          const portfolioRes = await ApiService.getUserPortfolio();
+          if (Array.isArray(portfolioRes) && portfolioRes.length > 0) {
+            useStore.setState({ portfolio: portfolioRes });
+          }
         }
-
-        if (propsRes.length > 0) setProperties(propsRes);
-        if (vehsRes.length > 0) setVehicles(vehsRes);
-        if (jobsRes.length > 0) setJobs(jobsRes);
-        if (assetsRes.length > 0) setAssets(assetsRes);
-        if (portfolioRes.length > 0) setPortfolio(portfolioRes);
-
-      } catch (err: any) {
-        console.warn('Backend synchronization notice:', err.message);
+      } catch (err) {
+        console.warn('Initial data load notice:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    initAppBackendData();
-  }, [setUser, setWallet, setToken, setProperties, setVehicles, setJobs, setAssets, setPortfolio, setIsLoading]);
+    initializeAppData();
+  }, [setToken, setUser, setWallet, setIsLoading]);
 
-  useEffect(() => {
-    if (user?.id) {
-      initPurchases(user.id).catch((err) => console.warn('Purchases init skipped:', err.message));
-    }
-  }, [user?.id]);
-
-  // LIVE EVENT REAL-TIME PUSH NOTIFICATIONS SYSTEM (DYNAMIC I18N)
+  // OFFLINE / BACKGROUND SIMULATION ENGINE (1 In-Game Month = 60 Real Minutes)
   useEffect(() => {
     if (isLoading) return;
 
-    // 1. PASSIVE RENTAL INCOME (owned+rented assets) & TENANT RENT (rented-as-tenant properties) TIMER (Every 25 seconds)
+    const lastActive = parseInt(localStorage.getItem('vl_last_active_timestamp') || Date.now().toString(), 10);
+    const now = Date.now();
+    localStorage.setItem('vl_last_active_timestamp', now.toString());
+
+    const elapsedMs = now - lastActive;
+    const elapsedMonths = Math.floor(elapsedMs / ONE_GAME_MONTH_MS);
+
+    if (elapsedMonths > 0) {
+      const state = useStore.getState();
+      const myId = state.user?.id || GUEST_OWNER_ID;
+
+      // 1. Collect offline rental income for elapsed months
+      const userProps = state.properties.filter(p => p.owner_id === myId && (p.is_for_rent || p.tenant_id));
+      const totalRentYield = userProps.reduce((sum, p) => sum + (p.rental_yield_per_tick || 15000), 0);
+      const offlineRentCollected = totalRentYield * elapsedMonths;
+
+      if (state.wallet && offlineRentCollected > 0) {
+        const newBank = state.wallet.bank_balance + offlineRentCollected;
+        state.setWallet({
+          ...state.wallet,
+          bank_balance: newBank,
+          total_liquid: state.wallet.cash_balance + newBank
+        });
+      }
+
+      // 2. Process offline bank loan installments
+      if (state.activeBankLoans.length > 0) {
+        for (let i = 0; i < Math.min(elapsedMonths, state.activeBankLoans.length); i++) {
+          const loan = state.activeBankLoans[i];
+          state.payBankLoanInstallment(loan.id);
+        }
+      }
+
+      // UI Toast Notification
+      state.addToast({
+        type: 'success',
+        title: `Siz Oyunda Yokken ${elapsedMonths} Oyun Ayı Geçti! ⏳`,
+        message: `Arka planda +${state.formatCurrency(offlineRentCollected)} kira toplandı ve banka taksitleriniz işlendi.`
+      });
+
+      // Phone / Browser Native Push Notification
+      NotificationService.sendPush(
+        "Virtual Life: Arka Plan Güncellemesi 📱",
+        `Siz oyunda yokken ${elapsedMonths} Oyun Ayı geçti. +${state.formatCurrency(offlineRentCollected)} kira toplandı ve taksitleriniz işlendi.`
+      );
+    }
+
+    // Save timestamp heartbeat every 30 seconds
+    const heartbeat = setInterval(() => {
+      localStorage.setItem('vl_last_active_timestamp', Date.now().toString());
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        localStorage.setItem('vl_last_active_timestamp', Date.now().toString());
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleVisibilityChange);
+
+    return () => {
+      clearInterval(heartbeat);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleVisibilityChange);
+    };
+  }, [isLoading]);
+
+  // Global Timers (Rental Income, Price Fluctuation, 60-Minute Loan Installment Cycle)
+  useEffect(() => {
+    if (isLoading) return;
+
+    // 1. PASSIVE RENTAL INCOME TIMER (Every 25 seconds)
     const rentInterval = setInterval(() => {
       const state = useStore.getState();
       const myId = state.user?.id || GUEST_OWNER_ID;
@@ -118,13 +171,6 @@ export const App: React.FC = () => {
             message: `+${state.formatCurrency(totalRentYield)}`
           });
         }
-        if (totalRentOwed > 0) {
-          state.addToast({
-            type: 'warning',
-            title: 'Kira Ödemesi 🏠',
-            message: `-${state.formatCurrency(totalRentOwed)}`
-          });
-        }
       }
     }, 25000);
 
@@ -143,7 +189,7 @@ export const App: React.FC = () => {
       });
     }, 20000);
 
-    // 2b. LIVE MARKET PRICE FLUCTUATIONS (Every 15 seconds — runs globally, not just while Investment tab is open)
+    // 2b. LIVE MARKET PRICE FLUCTUATIONS (Every 15 seconds)
     const priceInterval = setInterval(() => {
       const state = useStore.getState();
       if (state.assets.length === 0) return;
@@ -161,12 +207,11 @@ export const App: React.FC = () => {
       state.setAssets(updated);
     }, 15000);
 
-    // 3. STABLE VITAL LIFECYCLE SIMULATION TIMER (Every 60 seconds, realistic decay)
+    // 3. STABLE VITAL LIFECYCLE SIMULATION TIMER (Every 60 seconds)
     const vitalInterval = setInterval(() => {
       const state = useStore.getState();
       if (!state.user) return;
 
-      // Check if user has immunity active (e.g. after refill / elixir / vacation / surgery)
       const immunityUntil = parseInt(localStorage.getItem('vl_vital_immunity') || '0', 10);
       if (Date.now() < immunityUntil) {
         if (state.user.health < 100 || state.user.happiness < 100 || state.user.energy < 100) {
@@ -181,7 +226,7 @@ export const App: React.FC = () => {
       }
 
       const isBroke = !!state.wallet && state.wallet.total_liquid <= 0;
-      const happinessDecay = isBroke ? 2.5 : 0.5; // being broke stings a lot more
+      const happinessDecay = isBroke ? 2.5 : 0.5;
 
       const newEnergy = Math.max(0, state.user.energy - 1);
       const newHappiness = Math.max(0, state.user.happiness - happinessDecay);
@@ -194,26 +239,6 @@ export const App: React.FC = () => {
         happiness: newHappiness,
         energy: newEnergy
       });
-
-      if (newHealth <= 25 && state.user.health > 25) {
-        state.addToast({
-          type: 'error',
-          title: state.t('notification_health_title'),
-          message: `%${newHealth.toFixed(0)}`
-        });
-      } else if (newHappiness <= 20 && state.user.happiness > 20) {
-        state.addToast({
-          type: 'warning',
-          title: state.t('notification_happiness_title'),
-          message: `%${newHappiness.toFixed(0)}`
-        });
-      } else if (newEnergy <= 15 && state.user.energy > 15) {
-        state.addToast({
-          type: 'warning',
-          title: state.t('notification_energy_title'),
-          message: `%${newEnergy.toFixed(0)}`
-        });
-      }
 
       if (isBroke) {
         const wasAlreadyBroke = localStorage.getItem('vl_broke_flag') === '1';
@@ -228,24 +253,44 @@ export const App: React.FC = () => {
       } else {
         localStorage.removeItem('vl_broke_flag');
       }
+    }, 60000);
 
-      // Auto-process 1 monthly installment cycle for active bank loans every 60s (1 In-Game Month)
+    // 4. BANK LOAN MONTHLY INSTALLMENT CYCLE (Every 60 Real Minutes = 1 In-Game Month)
+    const loanInstallmentInterval = setInterval(() => {
+      const state = useStore.getState();
       const activeLoans = state.activeBankLoans;
       if (activeLoans.length > 0) {
         const loanToPay = activeLoans[0];
         if (state.wallet && state.wallet.total_liquid >= loanToPay.monthly_payment) {
           state.payBankLoanInstallment(loanToPay.id);
+          
+          // Send Phone / Mobile Push Notification
+          NotificationService.sendPush(
+            "Virtual Life: Banka Taksit Ödemesi 🏦",
+            `1 Oyun Ayı tamamlandı! "${loanToPay.loan_title}" taksidi (${state.formatCurrency(loanToPay.monthly_payment)}) hesabınızdan ödendi.`
+          );
+        } else {
+          state.addToast({
+            type: 'error',
+            title: '⚠️ Kredi Taksit Vadesi Geldi!',
+            message: `"${loanToPay.loan_title}" taksit ödemesi (${state.formatCurrency(loanToPay.monthly_payment)}) için bakiye yetersizdir. Findeks skorunuz etkilenebilir.`
+          });
+
+          NotificationService.sendPush(
+            "Virtual Life: GECİKMİŞ KREDİ TAKSİDİ ⚠️",
+            `1 Oyun Ayı tamamlandı! "${loanToPay.loan_title}" taksidini ödemek için bakiyeniz yetersizdir.`
+          );
         }
       }
-    }, 60000);
+    }, ONE_GAME_MONTH_MS);
 
-    // 4. LENT MONEY MATURITY CHECK (Every 5 seconds — collects loans that reached their due date)
+    // 5. LENT MONEY & AUCTION MATURITY CHECK (Every 5 seconds)
     const loanInterval = setInterval(() => {
       useStore.getState().collectMaturedLoans();
       useStore.getState().resolveUndergroundAuctionIfDue();
     }, 5000);
 
-    // 5. INCOMING PURCHASE OFFERS ON OWNED ASSETS (Every 35 seconds, chance-based)
+    // 6. INCOMING PURCHASE OFFERS ON OWNED ASSETS (Every 35 seconds)
     const offerInterval = setInterval(() => {
       if (Math.random() < 0.4) {
         useStore.getState().generateRandomOffer();
@@ -257,78 +302,93 @@ export const App: React.FC = () => {
       clearInterval(marketInterval);
       clearInterval(priceInterval);
       clearInterval(vitalInterval);
+      clearInterval(loanInstallmentInterval);
       clearInterval(loanInterval);
       clearInterval(offerInterval);
     };
   }, [isLoading]);
 
-  // Premium Glassmorphic Loading Screen with Official Logo
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col items-center justify-center space-y-5 p-4 select-none">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute w-24 h-24 rounded-full bg-amber-500/20 blur-xl animate-pulse"></div>
-          <img
-            src="/logo.jpg"
-            alt="Virtual Life Logo"
-            className="w-20 h-20 rounded-3xl object-cover border-2 border-amber-400 shadow-2xl shadow-amber-500/30 relative z-10"
-          />
-        </div>
-
-        <div className="text-center space-y-2 max-w-sm">
-          <div className="flex items-center justify-center gap-2">
-            <Loader2 className="w-5 h-5 text-amber-400 animate-spin" />
-            <h2 className="text-lg font-black tracking-tight text-white">VIRTUAL LIFE</h2>
-          </div>
-          <p className="text-sm font-bold text-slate-300 animate-pulse">
-            {t('loading_title')}
-          </p>
-          <p className="text-xs font-semibold text-slate-500 flex items-center justify-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" /> {t('loading_sub')}
-          </p>
-        </div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
+        <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-bold text-slate-400 animate-pulse">Virtual Life & Economy Yükleniyor...</p>
       </div>
     );
   }
 
+  const renderContent = () => {
+    switch (activeTabState) {
+      case 'dashboard': return <FinancialDashboard />;
+      case 'map': return <RealEstateMap />;
+      case 'vehicles': return <VehicleMarketPanel />;
+      case 'garage': return <MyGaragePanel />;
+      case 'underground': return <UndergroundMarketPanel />;
+      case 'leaderboard': return <LeaderboardPanel />;
+      case 'career': return <CareerPanel />;
+      case 'social': return <LifeSocialPanel />;
+      case 'investment': return <InvestmentPanel />;
+      case 'chat': return <GlobalChatPanel />;
+      case 'profile': return <UserProfilePanel />;
+      case 'store': return <StorePanel />;
+      default: return <FinancialDashboard />;
+    }
+  };
+
+  const navItems = [
+    { id: 'dashboard', label: t('nav_finances'), icon: LayoutDashboard },
+    { id: 'map', label: t('nav_map'), icon: Compass },
+    { id: 'vehicles', label: t('nav_vehicles'), icon: Car },
+    { id: 'garage', label: t('nav_garage'), icon: Warehouse },
+    { id: 'career', label: t('nav_career'), icon: Briefcase },
+    { id: 'investment', label: t('nav_investments'), icon: LineChart },
+    { id: 'social', label: t('nav_social'), icon: Users },
+    { id: 'chat', label: t('nav_chat'), icon: MessageSquare },
+    { id: 'underground', label: t('nav_underground'), icon: Skull },
+    { id: 'leaderboard', label: t('nav_leaderboard'), icon: Trophy },
+    { id: 'store', label: 'Mağaza', icon: ShoppingBag },
+    { id: 'profile', label: t('nav_profile'), icon: User }
+  ];
+
   return (
-    <div className="min-h-screen bg-[#070a12] text-slate-100 flex flex-col font-sans antialiased pb-44 md:pb-16 selection:bg-sky-500 selection:text-white">
-      <ToastContainer />
-      <AuthModal />
-      <LanguageSelectModal />
-      <NotificationPermissionModal />
-      <VitalLowOfferModal />
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 pb-24 md:pb-8">
       <Header />
+      <ToastContainer />
+      <VitalLowOfferModal />
+      <NotificationPermissionModal />
 
-      <div className="hidden md:block">
-        <Navigation />
-      </div>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === 'dashboard' && <FinancialDashboard />}
-        {activeTab === 'store' && <StorePanel />}
-        {activeTab === 'map' && <RealEstateMap />}
-        {activeTab === 'vehicles' && <VehicleMarketPanel />}
-        {activeTab === 'garage' && <MyGaragePanel />}
-        {activeTab === 'underground' && <UndergroundMarketPanel />}
-        {activeTab === 'leaderboard' && <LeaderboardPanel />}
-        {activeTab === 'career' && <CareerPanel />}
-        {activeTab === 'social' && <LifeSocialPanel />}
-        {activeTab === 'investment' && <InvestmentPanel />}
-        {activeTab === 'chat' && <GlobalChatPanel />}
-        {activeTab === 'profile' && <UserProfilePanel />}
+      {/* Main Container */}
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 flex-1">
+        {renderContent()}
       </main>
 
-      {/* Footer with Official Branding Logo */}
-      <footer className="bg-slate-950/80 border-t border-slate-800/80 py-6 text-center text-xs font-semibold text-slate-500 mb-20 md:mb-0">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <img src="/logo.jpg" alt="Virtual Life Footer Logo" className="w-7 h-7 rounded-xl object-cover border border-amber-400/60" />
-          <span className="font-black text-white text-sm">VIRTUAL LIFE</span>
-        </div>
-        <p>Virtual Life & Economy Simulation &copy; 2026 • Live Backend</p>
-      </footer>
+      {/* Bottom Sticky Mobile & Desktop Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800 backdrop-blur-xl px-2 py-2 shadow-2xl">
+        <div className="max-w-7xl mx-auto flex items-center justify-around overflow-x-auto scrollbar-none gap-1 sm:gap-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTabState === item.id;
 
-      <BottomNav />
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`flex flex-col items-center justify-center min-w-[56px] py-1.5 px-2 rounded-xl transition-all ${
+                  isActive
+                    ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-500/20 scale-105'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <Icon className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px] font-bold tracking-tight whitespace-nowrap">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Persistent AuthModal */}
+      {isAuthModalOpen && <AuthModal />}
     </div>
   );
 };
