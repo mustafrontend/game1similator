@@ -233,45 +233,118 @@ export const RealEstateMap: React.FC = () => {
           </div>
         </Card>
 
-        {/* RIGHT 1/2: PROPERTY DETAILS / PURCHASE PANEL */}
+        {/* RIGHT 1/2: PROPERTY DETAILS / PURCHASE & OWNER CONTROLS PANEL */}
         <Card className="border-slate-800 bg-slate-950 p-5 flex flex-col justify-between h-[640px] overflow-y-auto">
-          {selectedProperty ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <Badge variant={selectedProperty.is_for_sale ? 'gold' : 'emerald'}>
-                    {selectedProperty.is_for_sale ? 'SATILIK TAPU' : 'KİRALIK DAİRE'}
-                  </Badge>
-                  <h3 className="text-xl font-black text-white mt-1.5">{selectedProperty.title}</h3>
-                  <p className="text-xs font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-sky-400" /> {selectedProperty.address_name}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedProperty(null)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+          {selectedProperty ? (() => {
+            const myId = user?.id || GUEST_OWNER_ID;
+            const isMyProperty = selectedProperty.owner_id === myId;
 
-              <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-400">Satış Bedeli:</span>
-                  <span className="text-lg font-black text-amber-400">{formatCurrency(selectedProperty.price)}</span>
+            return (
+              <div className="space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant={isMyProperty ? 'purple' : selectedProperty.is_for_sale ? 'gold' : 'emerald'}>
+                        {isMyProperty ? '🏠 TAPULU MÜLKÜNÜZ' : selectedProperty.is_for_sale ? 'SATILIK TAPU' : 'KİRALIK DAİRE'}
+                      </Badge>
+                      {selectedProperty.is_for_sale && <Badge variant="gold">🏷️ SATILIK İLANDA</Badge>}
+                    </div>
+                    <h3 className="text-xl font-black text-white mt-1.5">{selectedProperty.title}</h3>
+                    <p className="text-xs font-semibold text-slate-400 flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-sky-400" /> {selectedProperty.address_name}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedProperty(null)}>
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-400">Günlük Kira Getirisi:</span>
-                  <span className="text-sm font-black text-emerald-400">+{formatCurrency(selectedProperty.rental_yield_per_tick)}/tick</span>
-                </div>
-              </div>
 
-              <Button
-                variant="gold"
-                className="w-full py-3 text-xs font-black shadow-lg shadow-amber-500/20"
-                onClick={() => setPurchaseProperty(selectedProperty)}
-              >
-                {selectedProperty.is_for_sale ? 'Tapuyu Satın Al' : 'Kontratı İmzala & Kirala'}
-              </Button>
-            </div>
-          ) : (
+                <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-400">Satış Bedeli:</span>
+                    <span className="text-lg font-black text-amber-400">{formatCurrency(selectedProperty.price)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-400">Günlük Kira Getirisi:</span>
+                    <span className="text-sm font-black text-emerald-400">+{formatCurrency(selectedProperty.rental_yield_per_tick)}/tick</span>
+                  </div>
+                </div>
+
+                {/* OWNER CONTROLS (IF PROPERTY IS OWNED BY PLAYER) */}
+                {isMyProperty ? (
+                  <div className="p-4 bg-slate-900/90 rounded-2xl border border-amber-400/40 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-black text-amber-300">
+                      <Tag className="w-4 h-4" /> Mülk Sahibi İlan Yönetimi
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-300 block">Satış İlan Fiyatı (₺)</label>
+                      <input
+                        type="number"
+                        value={newPropPrice}
+                        onChange={(e) => setNewPropPrice(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-400 focus:outline-none focus:border-amber-400"
+                        placeholder={selectedProperty.price.toString()}
+                      />
+
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        {selectedProperty.is_for_sale ? (
+                          <Button
+                            variant="outline"
+                            className="py-2.5 text-xs font-black border-rose-500/60 text-rose-300 hover:bg-rose-600 hover:text-white"
+                            onClick={() => {
+                              const updatedProps = properties.map(p => p.id === selectedProperty.id ? { ...p, is_for_sale: false } : p);
+                              setProperties(updatedProps);
+                              setSelectedProperty({ ...selectedProperty, is_for_sale: false });
+                              addToast({ type: 'info', title: 'Satış İlanından Çekildi ℹ️', message: `"${selectedProperty.title}" satış ilanından kaldırıldı.` });
+                            }}
+                          >
+                            Satıştan Çek
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="gold"
+                            className="py-2.5 text-xs font-black shadow-lg shadow-amber-500/20"
+                            onClick={() => {
+                              const newPrice = parseFloat(newPropPrice) || selectedProperty.price;
+                              const updatedProps = properties.map(p => p.id === selectedProperty.id ? { ...p, is_for_sale: true, price: newPrice } : p);
+                              setProperties(updatedProps);
+                              setSelectedProperty({ ...selectedProperty, is_for_sale: true, price: newPrice });
+                              addToast({ type: 'success', title: 'Mülk Satılığa Çıkarıldı! 🏷️', message: `"${selectedProperty.title}" ${formatCurrency(newPrice)} fiyatla haritada satılığa çıkarıldı.` });
+                            }}
+                          >
+                            🏷️ Satılığa Çıkar
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="secondary"
+                          className="py-2.5 text-xs font-black"
+                          onClick={() => {
+                            const newPrice = parseFloat(newPropPrice) || selectedProperty.price;
+                            const updatedProps = properties.map(p => p.id === selectedProperty.id ? { ...p, price: newPrice } : p);
+                            setProperties(updatedProps);
+                            setSelectedProperty({ ...selectedProperty, price: newPrice });
+                            addToast({ type: 'success', title: 'İlan Fiyatı Güncellendi 🟢', message: `Yeni satış fiyatı ${formatCurrency(newPrice)} olarak belirlendi.` });
+                          }}
+                        >
+                          Fiyatı Güncelle
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="gold"
+                    className="w-full py-3 text-xs font-black shadow-lg shadow-amber-500/20"
+                    onClick={() => setPurchaseProperty(selectedProperty)}
+                  >
+                    {selectedProperty.is_for_sale ? 'Tapuyu Satın Al' : 'Kontratı İmzala & Kirala'}
+                  </Button>
+                )}
+              </div>
+            );
+          })() : (
             <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-3">
               <Home className="w-12 h-12 text-slate-600 animate-pulse" />
               <p className="text-xs font-bold text-slate-400">Detaylarını görmek için haritadaki bir mülk iğnesine (Pin) tıklayın.</p>
