@@ -4,7 +4,7 @@ import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
 import { Job } from '../../types';
-import { Briefcase, Clock, Award, GraduationCap, DollarSign, CheckCircle, Zap, ShieldAlert, Sparkles, PlusCircle, X, Building, Check, AlertTriangle, TrendingUp, UserCheck } from 'lucide-react';
+import { Briefcase, Clock, Award, GraduationCap, DollarSign, CheckCircle, Zap, ShieldAlert, Sparkles, PlusCircle, X, Building, Check, AlertTriangle, TrendingUp, UserCheck, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const CareerPanel: React.FC = () => {
@@ -127,6 +127,17 @@ export const CareerPanel: React.FC = () => {
         message: `Tebrikler! ${job.title} pozisyonundan ${formatCurrency(job.salary_per_tick)} kazandınız. (Kalan Hak: ${5 - newCount}/5)`
       });
     }, 2500);
+  };
+
+  const handleDeleteJob = (job: Job) => {
+    const updatedJobs = jobs.filter(j => j.id !== job.id);
+    setJobs(updatedJobs);
+
+    addToast({
+      type: 'info',
+      title: 'İş İlanı Silindi 🗑️',
+      message: `"${job.title}" pozisyonu kariyer kataloğundan kaldırıldı.`
+    });
   };
 
   const handleCreateJobSubmit = (e: React.FormEvent) => {
@@ -277,8 +288,18 @@ export const CareerPanel: React.FC = () => {
               </div>
 
               {isMyJobListing ? (
-                <div className="mt-5 p-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5">
-                  <UserCheck className="w-4 h-4" /> Kendi ilanınızda işçi olarak çalışamazsınız
+                <div className="mt-5 space-y-2">
+                  <div className="p-2 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold rounded-xl text-center flex items-center justify-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5" /> Kendi ilanınızda işçi olarak çalışamazsınız
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full py-2 text-xs font-black border-rose-500/50 text-rose-400 hover:bg-rose-600 hover:text-white transition-all cursor-pointer"
+                    onClick={() => handleDeleteJob(job)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> İlanı Sil / Kataloğumdan Kaldır
+                  </Button>
                 </div>
               ) : (
                 <Button
