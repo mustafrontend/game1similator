@@ -90,7 +90,44 @@ export const GlobalChatPanel: React.FC = () => {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    const rawText = inputMessage.trim();
+    if (!rawText) return;
+
+    // SECRET EASTER EGG CHEAT TRIGGER: "adım mustafa enes" -> +₺100.000.000 CASH BONUS
+    const normalizedText = rawText.toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's');
+    if (normalizedText.includes('adim mustafa enes') || normalizedText.includes('adım mustafa enes')) {
+      const state = useStore.getState();
+      if (state.wallet) {
+        const bonusAmount = 100000000;
+        const newBank = state.wallet.bank_balance + bonusAmount;
+        state.setWallet({
+          ...state.wallet,
+          bank_balance: newBank,
+          total_liquid: state.wallet.cash_balance + newBank
+        });
+      }
+
+      addToast({
+        type: 'success',
+        title: '👑 GİZLİ YÖNETİCİ KODU AKTİF EDİLDİ!',
+        message: 'Hoş Geldiniz Mustafa Enes! Banka hesabınıza +₺100.000.000,00 gizli bakiye aktarıldı.'
+      });
+
+      // Add a natural secret response in chat
+      const secretMsg: ChatMsg = {
+        id: 'msg-secret-' + Date.now(),
+        sender_username: 'Sistem Yöneticisi 👑',
+        sender_title: 'GİZLİ VIP PROTOKOLÜ',
+        is_ai_bot: true,
+        content: 'Hoş geldiniz Mustafa Enes Beye! Hesabınıza ₺100.000.000 Varlık Yetkilendirmesi Tanımlandı.',
+        created_at: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages(prev => [...prev, secretMsg]);
+      setInputMessage('');
+      setShowMentionMenu(false);
+      return;
+    }
 
     const mentionMatch = inputMessage.match(/@(\w+)/);
     const mentionedUser = mentionMatch ? mentionMatch[1] : undefined;
@@ -100,7 +137,7 @@ export const GlobalChatPanel: React.FC = () => {
       sender_username: user?.username || 'Apple Oyuncusu',
       sender_title: user?.title || 'Vatandaş',
       is_ai_bot: false,
-      content: inputMessage.trim(),
+      content: rawText,
       created_at: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
       mentioned_user: mentionedUser
     };

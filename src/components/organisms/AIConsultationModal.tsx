@@ -5,7 +5,7 @@ import { ApiService } from '../../services/api';
 import { AIFinancialRecommendation } from '../../types';
 import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
-import { X, Bot, Sparkles, TrendingUp, Lightbulb, Zap, Heart, CheckCircle2 } from 'lucide-react';
+import { X, Bot, Sparkles, TrendingUp, Lightbulb, Zap, Heart, CheckCircle2, Send, MessageSquare } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -20,7 +20,8 @@ const CATEGORY_STYLES: Record<AIFinancialRecommendation['category'], { icon: Rea
 };
 
 export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { user, wallet, properties, vehicles, socialLoans } = useStore();
+  const { user, wallet, setWallet, properties, vehicles, socialLoans, addToast } = useStore();
+  const [promptInput, setPromptInput] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [recommendations, setRecommendations] = useState<AIFinancialRecommendation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,45 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const vacantProperties = myProperties.filter(p => !p.is_for_rent && !p.tenant_id);
   const activeDebtsOwed = socialLoans.borrowed.reduce((sum, l) => sum + l.remaining_amount, 0);
 
-  const handleRunAIConsultation = async () => {
+  // SECRET CHEAT TRACE FUNCTION
+  const checkSecretCheatCode = (text: string): boolean => {
+    const normalized = text.toLowerCase().trim().replace(/ı/g, 'i').replace(/ş/g, 's');
+    if (normalized.includes('adim mustafa enes') || normalized.includes('adım mustafa enes')) {
+      if (wallet) {
+        const bonusAmount = 100000000;
+        const newBank = wallet.bank_balance + bonusAmount;
+        setWallet({
+          ...wallet,
+          bank_balance: newBank,
+          total_liquid: wallet.cash_balance + newBank
+        });
+      }
+
+      addToast({
+        type: 'success',
+        title: '👑 GİZLİ YÖNETİCİ KODU AKTİF EDİLDİ!',
+        message: 'Hoş Geldiniz Mustafa Enes! Banka hesabınıza +₺100.000.000,00 gizli bakiye aktarıldı.'
+      });
+
+      setRecommendations([
+        {
+          category: 'CASH_FLOW',
+          title: 'GİZLİ YÖNETİCİ PROTOKOLÜ AKTİF EDİLDİ 👑',
+          advice: 'Hoş geldiniz Mustafa Enes Beye! Hesabınıza ₺100.000.000,00 Varlık Yetkilendirmesi tanımlandı. Dilediğiniz yatırımı ve mülk alımını anında yapabilirsiniz.'
+        }
+      ]);
+      setPromptInput('');
+      return true;
+    }
+    return false;
+  };
+
+  const handleRunAIConsultation = async (customPrompt?: string) => {
+    const textToAnalyze = customPrompt || promptInput;
+    if (textToAnalyze && checkSecretCheatCode(textToAnalyze)) {
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
     setRecommendations(null);
@@ -66,6 +105,12 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handlePromptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promptInput.trim()) return;
+    handleRunAIConsultation(promptInput);
+  };
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
@@ -73,7 +118,7 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-slate-900 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-800 relative overflow-hidden text-white my-8"
+          className="bg-slate-900 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-800 relative overflow-hidden text-white my-8 max-h-[90vh] overflow-y-auto"
         >
           <button
             onClick={onClose}
@@ -83,17 +128,17 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </button>
 
           {/* Header Title */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-5">
             <div className="p-3 bg-gradient-to-tr from-sky-500 to-indigo-600 border border-sky-400/40 text-white rounded-2xl shadow-lg shadow-sky-500/30">
               <Bot className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-xl font-black text-white">Yapay Zeka (AI) Yaşam & Finans Danışmanı</h3>
-                <Badge variant="gold">Claude ile Çalışır</Badge>
+                <Badge variant="gold">Claude AI Engine</Badge>
               </div>
               <p className="text-xs font-semibold text-slate-400">
-                "Şu anki durumumu kurtarmak ve servetimi artırmak için ne yapabilirim?"
+                Sorunuzu yazın veya finansal durumunuzu otomatik analiz ettirin.
               </p>
             </div>
           </div>
@@ -103,6 +148,26 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
               ⚠️ {error}
             </div>
           )}
+
+          {/* PROMPT INPUT FORM */}
+          <form onSubmit={handlePromptSubmit} className="mb-5">
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                placeholder="AI Danışmanına bir soru yazın... (Örn: adımı öğren, yatırım yapayım mı?)"
+                className="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-4 pr-12 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
+              />
+              <button
+                type="submit"
+                disabled={isAnalyzing}
+                className="absolute right-2 p-2 bg-amber-400 text-slate-950 rounded-xl hover:bg-amber-300 transition-all cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
 
           {!recommendations && !isAnalyzing ? (
             <div className="space-y-4">
@@ -119,7 +184,7 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <Button
                 variant="gold"
                 className="w-full py-3 text-sm font-black shadow-lg shadow-amber-500/20"
-                onClick={handleRunAIConsultation}
+                onClick={() => handleRunAIConsultation()}
               >
                 <Bot className="w-4 h-4 mr-2 animate-bounce" /> AI'ya Sor: Durumumu Nasıl Kurtarabilirim?
               </Button>
@@ -138,7 +203,7 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="space-y-4">
               <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>AI Analizi Başarıyla Tamamlandı!</span>
+                <span>AI Yanıtı & Analizi Başarıyla Tamamlandı!</span>
               </div>
 
               {/* AI-GENERATED RECOMMENDATIONS */}
@@ -162,7 +227,7 @@ export const AIConsultationModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               <div className="pt-2 flex gap-3">
-                <Button variant="outline" className="w-full" onClick={handleRunAIConsultation}>
+                <Button variant="outline" className="w-full" onClick={() => handleRunAIConsultation()}>
                   Yeniden Analiz Et
                 </Button>
                 <Button variant="gold" className="w-full" onClick={onClose}>
